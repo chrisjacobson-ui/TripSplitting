@@ -789,7 +789,7 @@
                     <div class="hh-header">Trip Loading</div>
                     <div class="hh-body">
                         <div class="hh-row"><span class="hh-lbl">Trip:</span><span class="hh-val">20260917081401</span></div>
-                        <div class="hh-section-title">Loaded Containers</div>
+                        <div class="hh-section-title">Loaded Containers (38)</div>
                         <table class="hh-table">
                             <thead><tr><th>Number</th><th>Weight</th><th>Order</th></tr></thead>
                             <tbody>
@@ -800,6 +800,7 @@
                                 <tr><td colspan="3" style="color:#9090a8;font-style:italic;">+ 34 more</td></tr>
                             </tbody>
                         </table>
+                        <div id="hh2-pending">
                         <div class="hh-section-title">Containers to Load (12)</div>
                         <table class="hh-table">
                             <thead><tr><th>Number</th><th>Weight</th><th>Order</th></tr></thead>
@@ -810,6 +811,7 @@
                                 <tr><td colspan="3" style="color:#9090a8;font-style:italic;">+ 9 more</td></tr>
                             </tbody>
                         </table>
+                        </div>
                         <div class="hh-container-row">
                             <span class="hh-container-lbl">Container:</span>
                             <input class="hh-input-sm" type="text" style="flex:1;">
@@ -817,8 +819,8 @@
                     </div>
                     <div class="hh-footer">
                         <button class="hh-btn hh-btn-back" onclick="switchHH(1)">Back</button>
-                        <button class="hh-btn hh-btn-exit" onclick="switchHH(5)">Trip Full</button>
-                        <button class="hh-btn hh-btn-submit" onclick="switchHH(3)">Summary</button>
+                        <button class="hh-btn hh-btn-exit" id="hh2-trip-full-btn" onclick="switchHH(5)">Trip Full</button>
+                        <button class="hh-btn hh-btn-submit" id="hh2-summary-btn" onclick="switchHH(3)">Summary</button>
                     </div>
                 </div>
 
@@ -881,19 +883,8 @@
                     <div class="hh-header">Trip Full</div>
                     <div class="hh-body">
                         <div class="hh-row"><span class="hh-lbl">Trip:</span><span class="hh-val">20260917081401</span></div>
-                        <p class="hh-prompt" style="margin-top:.6rem;">Closing this trip. The following containers will be auto-assigned to trip 20260917081601:</p>
-                        <table class="hh-table">
-                            <thead><tr><th>Container</th><th>Weight</th><th>Order</th></tr></thead>
-                            <tbody>
-                                <tr><td class="hh-lpn">LPN-884521</td><td>80</td><td>10042</td></tr>
-                                <tr><td class="hh-lpn">LPN-884522</td><td>80</td><td>10042</td></tr>
-                                <tr><td class="hh-lpn">LPN-884523</td><td>40</td><td>10042</td></tr>
-                                <tr><td class="hh-lpn">LPN-884524</td><td>25</td><td>10042</td></tr>
-                                <tr><td class="hh-lpn">LPN-884525</td><td>25</td><td>10042</td></tr>
-                                <tr><td colspan="3" style="color:#9090a8;font-style:italic;">+ 7 more</td></tr>
-                            </tbody>
-                            <tfoot><tr><td colspan="3" style="color:#5a5a72;font-size:.68rem;padding-top:.3rem;">12 containers total — a BOL will be generated for trip 20260917081401.</td></tr></tfoot>
-                        </table>
+                        <p class="hh-prompt" style="margin-top:.6rem;">12 remaining containers will be transferred to trip 20260917081601.</p>
+                        <p class="hh-prompt" style="margin-top:.5rem;">Select Continue to proceed or Back to return to loading.</p>
                     </div>
                     <div class="hh-footer">
                         <button class="hh-btn hh-btn-back" onclick="switchHH(2)">Back</button>
@@ -1173,8 +1164,8 @@
                 <div class="banner banner-warn" style="margin-bottom:.85rem;">
                     <i class="fas fa-info-circle"></i>
                     <div>
-                        <strong>B2B-10042 pallets are not shown here.</strong>
-                        These pallets are currently assigned to Trip 1. They will appear on this trip once workers scan them at the loading dock.
+                        <strong>Order 10042 containers are not shown here.</strong>
+                        These containers are currently assigned to Trip 20260917081401. They will appear on this trip once scanned during Trip Loading.
                     </div>
                 </div>
                 <div class="empty-state" style="padding:2rem;">
@@ -1237,7 +1228,7 @@
             <div class="title-row">
                 <i class="fas fa-chevron-left back-arrow" onclick="switchView(1, document.querySelectorAll('.view-tab')[0])"></i>
                 <span class="page-title">20260917081401</span>
-                <span class="v1-sbadge v1-loading" style="font-size:.72rem;padding:.18rem .65rem;">Loading</span>
+                <span id="v6-trip-status" class="v1-sbadge v1-loading" style="font-size:.72rem;padding:.18rem .65rem;">Loading</span>
                 <div class="actions-bar">
                     <div class="actions-wrap">
                         <button class="btn btn-secondary" onclick="toggleDrop('v6-actions-drop', event)">Actions <i class="fas fa-chevron-down" style="font-size:.6rem;"></i></button>
@@ -1754,7 +1745,7 @@
 <div class="modal-overlay" id="add-trip-modal" style="display:none;">
     <div class="modal" style="max-width:480px;">
         <div class="modal-header">
-            <h2>New Trip</h2>
+            <h2>New Linked Trip</h2>
             <button class="modal-close" onclick="closeAddTripModal()"><i class="fas fa-times"></i></button>
         </div>
         <div class="modal-body" style="display:flex;flex-direction:column;gap:.85rem;">
@@ -1828,6 +1819,11 @@ function closeTrip1() {
             <p class="empty-hint">All containers from this trip have been shipped.</p>
         </div>`;
 
+    // View 6 — update status badge to Closed
+    const v6Status = document.getElementById('v6-trip-status');
+    v6Status.className = 'v1-sbadge v1-closed';
+    v6Status.textContent = 'Closed';
+
     switchView(1, document.querySelectorAll('.view-tab')[0]);
     notify('Trip 20260917081401 closed. 12 containers auto-assigned to 20260917081601. BOL generated.', 'success');
 }
@@ -1845,6 +1841,11 @@ function confirmTruckFull() {
     statusBadge.innerHTML = '<i class="fas fa-circle" style="font-size:.45rem;"></i> Staged';
     // View 2 info panel — hide it (pendingSplit flag cleared)
     document.getElementById('v2-info-panel').style.display = 'none';
+
+    // Screen 2 — hide transferred containers and Trip Full button; relabel advance button
+    document.getElementById('hh2-pending').style.display = 'none';
+    document.getElementById('hh2-trip-full-btn').style.display = 'none';
+    document.getElementById('hh2-summary-btn').textContent = 'Next';
 
     // View 2 Containers tab — populate with the 12 transferred containers
     document.getElementById('v2-containers').innerHTML = `
