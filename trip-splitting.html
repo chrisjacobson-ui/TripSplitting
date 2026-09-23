@@ -1,0 +1,2098 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trip Splitting — Deposco</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        html, body { height: 100%; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            font-size: 13px; background: #f0f0f4; color: #2d2d3a;
+            line-height: 1.5;
+            display: flex; flex-direction: column; overflow: hidden;
+        }
+
+        /* ── Topbar ── */
+        .topbar {
+            flex-shrink: 0; z-index: 400;
+            background: #252530; height: 44px;
+            display: flex; align-items: center; padding: 0 .75rem; gap: .75rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,.35);
+        }
+        .topbar-hamburger { color: rgba(255,255,255,.6); font-size: .95rem; cursor: pointer; padding: .25rem; }
+        .topbar-brand { display: flex; align-items: center; gap: .4rem; text-decoration: none; }
+        .logo-mark { width: 24px; height: 24px; background: #f08020; border-radius: 3px; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: .7rem; color: white; letter-spacing: -.5px; }
+        .logo-text { font-size: .82rem; font-weight: 700; color: white; letter-spacing: .08em; text-transform: uppercase; }
+        .topbar-search { flex: 1; max-width: 500px; background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.12); border-radius: 4px; padding: .3rem .75rem; color: rgba(255,255,255,.85); font-size: .8rem; outline: none; }
+        .topbar-search::placeholder { color: rgba(255,255,255,.4); }
+        .topbar-icons { margin-left: auto; display: flex; align-items: center; gap: .85rem; }
+        .topbar-icons i { color: rgba(255,255,255,.6); font-size: .9rem; cursor: pointer; }
+        .topbar-icons i:hover { color: white; }
+
+        /* ── View switcher ── */
+        .view-switcher {
+            flex-shrink: 0; z-index: 300;
+            background: #1e1e28; border-bottom: 1px solid #3a3a4a;
+            display: flex; padding: 0 .75rem; gap: 0;
+        }
+        .view-tab {
+            padding: .52rem 1.1rem; font-size: .75rem; font-weight: 600;
+            color: rgba(255,255,255,.45); cursor: pointer;
+            border-bottom: 2px solid transparent; margin-bottom: -1px;
+            transition: all .1s; white-space: nowrap;
+        }
+        .view-tab:hover { color: rgba(255,255,255,.8); }
+        .view-tab.active { color: #f08020; border-bottom-color: #f08020; }
+        .view-tab .vt-num { font-size: .65rem; opacity: .6; margin-right: .3rem; }
+
+        /* ── App layout ── */
+        .app-layout { display: flex; overflow: hidden; }
+
+        /* ── Sidebar ── */
+        .sidebar { width: 190px; flex-shrink: 0; background: #2a2a38; padding: .5rem 0; overflow-y: auto; min-height: 0; }
+        .sidebar-section-label { font-size: .6rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: rgba(255,255,255,.3); padding: .6rem .85rem .25rem; }
+        .sidebar-item { display: flex; align-items: center; gap: .55rem; padding: .42rem .85rem; color: rgba(255,255,255,.65); text-decoration: none; font-size: .78rem; font-weight: 500; cursor: pointer; transition: all .1s ease; }
+        .sidebar-item:hover { color: white; background: rgba(255,255,255,.05); }
+        .sidebar-item.active { color: #f08020; background: rgba(240,128,32,.08); }
+        .sidebar-item i { width: 13px; text-align: center; font-size: .78rem; flex-shrink: 0; }
+        .sidebar-item .chevron { margin-left: auto; font-size: .6rem; color: rgba(255,255,255,.25); }
+        .sidebar-divider { height: 1px; background: rgba(255,255,255,.07); margin: .3rem 0; }
+        .sidebar-sub { padding-left: 2rem; }
+        .sidebar-sub .sidebar-item { font-size: .75rem; padding: .32rem .85rem; }
+
+        /* ── Main ── */
+        .main { flex: 1; overflow-y: auto; overflow-x: hidden; display: flex; flex-direction: column; min-height: 0; }
+
+        /* ── Page chrome ── */
+        .page-chrome { background: white; border-bottom: 1px solid #e0e0ea; padding: .5rem 1.25rem .6rem; }
+        .breadcrumb { font-size: .72rem; color: #9090a8; margin-bottom: .25rem; }
+        .breadcrumb a { color: #9090a8; text-decoration: none; }
+        .breadcrumb a:hover { color: #f08020; }
+        .title-row { display: flex; align-items: center; gap: .75rem; }
+        .back-arrow { color: #5a5a72; font-size: .85rem; cursor: pointer; margin-right: .1rem; }
+        .page-title { font-size: 1.15rem; font-weight: 700; color: #1e1e2a; }
+        .page-subtitle { font-size: .8rem; color: #7a7a92; margin-left: .1rem; }
+        .actions-bar { margin-left: auto; display: flex; gap: .5rem; align-items: center; }
+
+        /* ── Buttons ── */
+        .btn { display: inline-flex; align-items: center; gap: .35rem; padding: .38rem .9rem; border-radius: 3px; font-weight: 600; font-size: .78rem; cursor: pointer; border: none; transition: all .1s ease; text-decoration: none; white-space: nowrap; }
+        .btn-primary { background: #f08020; color: white; }
+        .btn-primary:hover { background: #d96e18; }
+        .btn-primary:disabled { background: #f5c090; cursor: not-allowed; opacity: .6; }
+        .btn-secondary { background: white; color: #4a4a5a; border: 1px solid #c8c8d8; }
+        .btn-secondary:hover { background: #f5f5f8; border-color: #a8a8b8; }
+        .btn-danger { background: white; color: #c03030; border: 1px solid #e0b0b0; }
+        .btn-danger:hover { background: #fff0f0; }
+        .btn-sm { padding: .26rem .65rem; font-size: .73rem; }
+
+        /* ── Status badges ── */
+        .sbadge { display: inline-flex; align-items: center; gap: .25rem; font-size: .67rem; font-weight: 700; padding: .13rem .52rem; border-radius: 20px; }
+        .sbadge-loading  { background: #d8f0e0; color: #1a6a38; }
+        .sbadge-open     { background: #d0eeff; color: #1a5a88; }
+        .sbadge-staged   { background: #fff0d0; color: #7a4a10; }
+        .sbadge-closed   { background: #e8e8f0; color: #4a4a5a; }
+        .sbadge-split    { background: #ede9fe; color: #5b21b6; }
+        .sbadge-planned  { background: #d8f0e0; color: #1a6a38; }
+
+        /* ── Section ── */
+        .section-wrap { background: white; border-bottom: 1px solid #e0e0ea; padding: .85rem 1.25rem; }
+        .section-title { font-size: .82rem; font-weight: 700; color: #1e1e2a; margin-bottom: .75rem; }
+
+        /* ── Fields grid ── */
+        .fields-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: .75rem 1.25rem; }
+        .field-item { display: flex; flex-direction: column; gap: .15rem; min-width: 0; }
+        .field-label { font-size: .68rem; color: #7a7a92; font-weight: 500; }
+        .field-value { font-size: .8rem; color: #1e1e2a; font-weight: 500; display: flex; align-items: center; gap: .35rem; flex-wrap: wrap; }
+        .field-value.link { color: #f08020; cursor: pointer; }
+        .lock-icon { color: #c8c8d8; font-size: .65rem; }
+
+        /* ── Tabs ── */
+        .tab-bar { background: white; border-bottom: 2px solid #e0e0ea; padding: 0 1.25rem; display: flex; }
+        .tab { padding: .6rem 1rem; font-size: .8rem; font-weight: 600; color: #7a7a92; cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -2px; transition: all .1s; }
+        .tab:hover { color: #2d2d3a; }
+        .tab.active { color: #f08020; border-bottom-color: #f08020; }
+
+        /* ── Tab content ── */
+        .tab-content { padding: 1rem 1.25rem; flex: 1; }
+        .tab-pane { display: none; }
+        .tab-pane.active { display: block; }
+
+        /* ── Table toolbar ── */
+        .table-toolbar { display: flex; align-items: center; gap: .5rem; margin-bottom: .65rem; flex-wrap: wrap; }
+        .table-toolbar-title { font-size: .82rem; font-weight: 700; color: #1e1e2a; margin-right: .25rem; }
+        .table-toolbar-right { margin-left: auto; display: flex; gap: .4rem; }
+
+        /* ── Data table ── */
+        .data-table-wrap { overflow-x: auto; }
+        .data-table { width: 100%; border-collapse: collapse; font-size: .76rem; white-space: nowrap; }
+        .data-table thead th { background: #f5f5f8; border-bottom: 1px solid #e0e0ea; padding: .4rem .75rem; text-align: left; font-size: .67rem; font-weight: 700; color: #606078; text-transform: uppercase; letter-spacing: .04em; }
+        .data-table tbody tr { border-bottom: 1px solid #f0f0f5; transition: background .07s; cursor: pointer; }
+        .data-table tbody tr:hover { background: #fafafa; }
+        .data-table td { padding: .45rem .75rem; color: #2d2d3a; vertical-align: middle; }
+        .td-link { color: #f08020; font-weight: 700; text-decoration: none; cursor: pointer; }
+        .td-link:hover { text-decoration: underline; }
+
+        /* ── Info panel ── */
+        .info-panel {
+            display: flex; gap: .65rem; align-items: flex-start;
+            background: #e8f4fd; border-left: 3px solid #2196f3;
+            border-radius: 3px; padding: .75rem 1rem;
+            margin: .85rem 1.25rem; font-size: .8rem; color: #0d3c5c;
+        }
+        .info-panel i { color: #2196f3; font-size: 1rem; margin-top: .05rem; flex-shrink: 0; }
+        .info-panel strong { display: block; font-weight: 700; margin-bottom: .2rem; }
+
+        /* ── Empty state ── */
+        .empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 3.5rem 2rem; color: #b0b0c8; gap: .65rem; text-align: center; }
+        .empty-state i { font-size: 2.25rem; }
+        .empty-state p { font-size: .82rem; max-width: 320px; line-height: 1.6; }
+        .empty-state .empty-hint { font-size: .75rem; color: #c8c8d8; }
+
+        /* ── Summary stat strip ── */
+        .stat-strip { display: flex; gap: 0; border-bottom: 1px solid #e0e0ea; background: white; }
+        .stat-cell { padding: .6rem 1.5rem; border-right: 1px solid #e8e8f0; text-align: center; }
+        .stat-cell:last-child { border-right: none; }
+        .stat-val { font-size: 1.25rem; font-weight: 700; color: #f08020; line-height: 1.2; }
+        .stat-lbl { font-size: .65rem; color: #9090a8; text-transform: uppercase; letter-spacing: .04em; }
+
+        /* ── LPN progress ── */
+        .lpn-progress { margin-top: .3rem; }
+        .lpn-bar { height: 4px; background: #e8e8f0; border-radius: 2px; overflow: hidden; width: 80px; display: inline-block; vertical-align: middle; margin-left: .4rem; }
+        .lpn-fill { height: 100%; border-radius: 2px; background: #28a060; }
+
+        /* ── Loading dock screen ── */
+        .dock-screen { background: #f0f0f4; flex: 1; padding: 1.5rem; }
+        .dock-header { background: white; border-radius: 4px; padding: .85rem 1.25rem; margin-bottom: 1.25rem; border: 1px solid #e0e0ea; display: flex; align-items: center; gap: .75rem; }
+        .dock-header h1 { font-size: 1.05rem; font-weight: 700; color: #1e1e2a; }
+        .dock-order-badge { font-size: .75rem; color: #f08020; font-weight: 700; background: rgba(240,128,32,.08); border: 1px solid rgba(240,128,32,.2); padding: .2rem .6rem; border-radius: 20px; }
+        .dock-prompt { font-size: .82rem; color: #5a5a72; margin-bottom: 1rem; }
+
+        /* ── Handheld Emulator ── */
+        .handheld-wrap { display: flex; justify-content: center; padding: 1.5rem 1rem; }
+        .handheld-device { width: 280px; border: 2px solid #7a7a8a; border-radius: 10px; overflow: hidden; box-shadow: 0 6px 28px rgba(0,0,0,.28); background: #f0f0f4; display: flex; flex-direction: column; }
+        .hh-screen { display: none; flex-direction: column; min-height: 460px; }
+        .hh-screen.active { display: flex; }
+        .hh-header { background: #252530; color: #fff; font-weight: 700; font-size: .82rem; padding: .5rem .75rem; flex-shrink: 0; }
+        .hh-body { flex: 1; padding: .75rem; overflow-y: auto; }
+        .hh-footer { display: flex; border-top: 2px solid #b0b0c0; flex-shrink: 0; }
+        .hh-btn { flex: 1; padding: .55rem .4rem; border: none; font-size: .77rem; font-weight: 700; cursor: pointer; border-right: 1px solid rgba(0,0,0,.12); }
+        .hh-btn:last-child { border-right: none; }
+        .hh-btn-back { background: #8a8a9a; color: white; }
+        .hh-btn-submit { background: #f08020; color: white; }
+        .hh-btn-exit { background: #6a6a7a; color: white; }
+        .hh-row { display: flex; align-items: baseline; margin-bottom: .35rem; font-size: .8rem; }
+        .hh-lbl { width: 85px; color: #4a4a5a; flex-shrink: 0; }
+        .hh-val { color: #1a6ab0; font-weight: 500; }
+        .hh-prompt { font-size: .78rem; color: #3a3a4a; margin: .75rem 0 .4rem; }
+        .hh-input { width: 100%; border: 2px solid #2d2d3a; border-radius: 2px; padding: .3rem .4rem; font-size: .78rem; background: white; outline: none; box-sizing: border-box; }
+        .hh-section-title { font-size: .75rem; font-weight: 700; color: #1a6ab0; margin: .75rem 0 .3rem; }
+        .hh-table { width: 100%; border-collapse: collapse; font-size: .71rem; margin-bottom: .25rem; }
+        .hh-table th { text-align: left; border-bottom: 1px solid #c0c0d0; padding: .2rem .25rem; color: #4a4a5a; font-weight: 600; }
+        .hh-table td { padding: .2rem .25rem; border-bottom: 1px solid #e8e8f0; color: #1e1e2a; }
+        .hh-lpn { color: #f08020; font-weight: 600; }
+        .hh-field-row { display: flex; flex-direction: column; margin-bottom: .45rem; font-size: .78rem; }
+        .hh-field-label { color: #3a3a4a; margin-bottom: .15rem; }
+        .hh-req { color: #d32f2f; }
+        .hh-input-sm { border: 1px solid #8a8a9a; border-radius: 2px; padding: .22rem .35rem; font-size: .78rem; background: white; outline: none; width: 100%; box-sizing: border-box; }
+        .hh-container-row { display: flex; align-items: center; gap: .5rem; margin-top: .75rem; font-size: .78rem; }
+        .hh-container-lbl { flex-shrink: 0; color: #3a3a4a; font-weight: 600; }
+        .trip-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.25rem; }
+        .trip-card {
+            background: white; border: 2px solid #e0e0ea; border-radius: 6px;
+            padding: 1.1rem 1.25rem; cursor: pointer; transition: all .15s;
+        }
+        .trip-card:hover { border-color: #c8c8d8; box-shadow: 0 2px 8px rgba(0,0,0,.07); }
+        .trip-card.selected { border-color: #f08020; box-shadow: 0 2px 12px rgba(240,128,32,.18); }
+        .trip-card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: .75rem; }
+        .trip-card-id { font-size: 1rem; font-weight: 700; color: #1e1e2a; }
+        .trip-card-badges { display: flex; gap: .35rem; flex-wrap: wrap; }
+        .trip-card-field { font-size: .76rem; color: #5a5a72; margin-bottom: .3rem; display: flex; gap: .4rem; }
+        .trip-card-field i { width: 14px; color: #b0b0c8; text-align: center; flex-shrink: 0; }
+        .trip-card-field span { color: #1e1e2a; font-weight: 500; }
+        .trip-card-progress { margin-top: .75rem; }
+        .progress-label { display: flex; justify-content: space-between; font-size: .72rem; color: #6a6a82; margin-bottom: .3rem; }
+        .progress-bar { height: 6px; background: #e8e8f0; border-radius: 3px; overflow: hidden; }
+        .progress-fill { height: 100%; border-radius: 3px; background: #28a060; transition: width .3s; }
+        .trip-card-empty { display: flex; align-items: center; gap: .4rem; margin-top: .75rem; font-size: .75rem; color: #9090a8; font-style: italic; }
+        .dock-action { display: flex; justify-content: flex-end; gap: .5rem; }
+
+        /* ── Actions dropdown ── */
+        .actions-wrap { position: relative; }
+        .actions-dropdown { display: none; position: absolute; top: calc(100% + 3px); right: 0; background: white; border: 1px solid #d0d0de; border-radius: 3px; box-shadow: 0 4px 14px rgba(0,0,0,.15); z-index: 200; min-width: 200px; }
+        .actions-dropdown.open { display: block; }
+        .actions-dropdown-section { padding: .4rem .85rem .2rem; font-size: .65rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: #9090a8; border-bottom: 1px solid #f0f0f5; }
+        .actions-dropdown-item { padding: .5rem .85rem; font-size: .8rem; cursor: pointer; color: #2d2d3a; display: flex; align-items: center; gap: .5rem; transition: background .08s; }
+        .actions-dropdown-item:hover { background: #fafafa; color: #f08020; }
+        .actions-dropdown-item.danger { color: #c03030; }
+        .actions-dropdown-item.danger:hover { background: #fff0f0; color: #c03030; }
+        .actions-dropdown-item i { width: 14px; text-align: center; font-size: .75rem; }
+
+        /* ── Modal ── */
+        .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.45); z-index: 500; align-items: center; justify-content: center; }
+        .modal-overlay.open { display: flex; }
+        .modal { background: white; border-radius: 4px; width: 90%; max-width: 540px; max-height: 90vh; overflow-y: auto; box-shadow: 0 8px 40px rgba(0,0,0,.28); animation: modalIn .16s ease; }
+        @keyframes modalIn { from { transform: translateY(14px); opacity: 0; } to { transform: none; opacity: 1; } }
+        .modal-header { padding: .75rem 1.1rem; border-bottom: 1px solid #e0e0ea; display: flex; justify-content: space-between; align-items: center; background: #fafafa; }
+        .modal-header h2 { font-size: .9rem; font-weight: 700; color: #1e1e2a; display: flex; align-items: center; gap: .45rem; }
+        .modal-header h2 i { color: #f08020; }
+        .modal-close { background: none; border: none; cursor: pointer; color: #9090a8; font-size: .95rem; }
+        .modal-close:hover { color: #2d2d3a; }
+        .modal-body { padding: 1.1rem; }
+        .modal-footer { padding: .65rem 1.1rem 1.1rem; display: flex; justify-content: flex-end; gap: .45rem; border-top: 1px solid #e0e0ea; }
+
+        /* LPN table in modal */
+        .lpn-table { width: 100%; border-collapse: collapse; font-size: .78rem; margin: .85rem 0; border: 1px solid #e0e0ea; border-radius: 3px; overflow: hidden; }
+        .lpn-table thead th { background: #f5f5f8; border-bottom: 1px solid #e0e0ea; padding: .38rem .75rem; text-align: left; font-size: .67rem; font-weight: 700; color: #606078; text-transform: uppercase; letter-spacing: .04em; }
+        .lpn-table tbody td { padding: .38rem .75rem; border-bottom: 1px solid #f0f0f5; }
+        .lpn-table tbody tr:last-child td { border-bottom: none; }
+        .lpn-table tfoot td { padding: .35rem .75rem; background: #f5f5f8; border-top: 1px solid #e0e0ea; font-size: .72rem; color: #787890; font-style: italic; }
+
+        /* Banner */
+        .banner { display: flex; align-items: flex-start; gap: .6rem; padding: .65rem .85rem; border-radius: 3px; font-size: .78rem; margin-bottom: .65rem; border-left: 3px solid; }
+        .banner i { margin-top: .1rem; flex-shrink: 0; font-size: .85rem; }
+        .banner strong { display: block; font-weight: 700; margin-bottom: .1rem; }
+        .banner-warn { background: #fff8ec; border-left-color: #f08020; color: #7a4a10; }
+
+        /* notification */
+        .notif-container { position: fixed; bottom: 1.1rem; right: 1.1rem; z-index: 9999; display: flex; flex-direction: column; gap: .45rem; }
+        .notif { background: white; border-radius: 4px; padding: .65rem .9rem; box-shadow: 0 4px 16px rgba(0,0,0,.15); display: flex; align-items: center; gap: .6rem; max-width: 340px; font-size: .8rem; border: 1px solid #e0e0ea; animation: notifIn .18s ease; }
+        @keyframes notifIn { from { transform: translateY(8px); opacity: 0; } to { transform: none; opacity: 1; } }
+        .notif-success { border-left: 3px solid #28a060; }
+        .notif-success i { color: #28a060; }
+
+        /* ── View 1 lookup tabs ── */
+        .v1-lookup-tab {
+            background: white; border: none; padding: .38rem .85rem;
+            font-size: .78rem; font-weight: 600; color: #5a5a72; cursor: pointer;
+            border-right: 1px solid #d0d0de; transition: all .1s;
+        }
+        .v1-lookup-tab:last-child { border-right: none; }
+        .v1-lookup-tab:hover { background: #f5f5f8; color: #2d2d3a; }
+        .v1-lookup-tab.active { background: #f08020; color: white; }
+
+        /* ── View 1 status badges (match screenshot pill style) ── */
+        .v1-sbadge {
+            display: inline-block; font-size: .72rem; font-weight: 600;
+            padding: .15rem .6rem; border-radius: 4px;
+        }
+        .v1-draft   { background: #f0f0f5; color: #5a5a72; border: 1px solid #d0d0de; }
+        .v1-open    { background: #dbeafe; color: #1e40af; }
+        .v1-planned { background: #dbeafe; color: #1e40af; }
+        .v1-closed  { background: #d1fae5; color: #065f46; }
+        .v1-loading { background: #fef3c7; color: #92400e; }
+        .v1-staged  { background: #ede9fe; color: #5b21b6; }
+
+        /* ── View 1 value pills ── */
+        .v1-pill {
+            display: inline-block; font-size: .72rem;
+            padding: .12rem .5rem; border-radius: 3px;
+            background: #f0f0f5; color: #4a4a62;
+        }
+        .linked-popover-wrap { position: relative; display: inline-block; }
+        .linked-chip { display: inline-flex; align-items: center; gap: .28rem; background: #ede9fe; color: #5b21b6; font-size: .68rem; font-weight: 600; padding: .15rem .48rem; border-radius: 10px; cursor: pointer; border: 1px solid #c4b5fd; white-space: nowrap; user-select: none; }
+        .linked-chip:hover { background: #ddd6fe; }
+        .linked-popover { display: none; position: absolute; top: calc(100% + 5px); left: 0; background: white; border: 1px solid #d0d0e0; border-radius: 6px; box-shadow: 0 4px 14px rgba(0,0,0,.13); padding: .3rem 0; min-width: 175px; z-index: 500; }
+        .linked-popover.open { display: block; }
+        .linked-popover-label { font-size: .65rem; font-weight: 700; color: #9090a8; text-transform: uppercase; letter-spacing: .05em; padding: .2rem .75rem .35rem; }
+        .linked-popover-item { display: flex; align-items: center; gap: .4rem; padding: .3rem .75rem; font-size: .75rem; color: #1a6ab0; cursor: pointer; }
+        .linked-popover-item:hover { background: #f5f5fa; }
+
+        /* view wrapper */
+        .view { display: none; min-height: 0; }
+        .view.active { display: flex; flex: 1; min-height: 0; }
+
+        /* ── Pallet Optimization (ported from tma-trip-details) ── */
+        .opt-results-header { display: flex; justify-content: space-between; align-items: center; padding: .6rem 1rem; border-bottom: 1px solid #e8e8f0; background: #fafafa; border-radius: 4px 4px 0 0; }
+        .opt-results-header h3 { font-size: .82rem; font-weight: 700; color: #1e1e2a; display: flex; align-items: center; gap: .4rem; }
+        .opt-results-body { padding: 1rem; }
+        .summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: .5rem; margin-bottom: 1rem; }
+        .summary-card { background: #fafafa; border: 1px solid #e8e8f0; border-radius: 3px; padding: .6rem; text-align: center; }
+        .summary-card .s-val { font-size: 1.5rem; font-weight: 700; color: #f08020; line-height: 1.1; }
+        .summary-card .s-lbl { font-size: .65rem; color: #787890; margin-top: .15rem; text-transform: uppercase; letter-spacing: .04em; }
+        .pallets-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(265px, 1fr)); gap: .65rem; }
+        .pallet-card { border: 1px solid #e0e0ea; border-radius: 4px; padding: .85rem; background: white; }
+        .pallet-card.full-pick { border-color: #88d0a8; background: #f5fdf8; }
+        .pallet-card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: .55rem; }
+        .pallet-id { font-weight: 700; font-size: .85rem; color: #f08020; }
+        .pallet-type-badge { font-size: .65rem; color: #787890; background: #f0f0f6; padding: .12rem .4rem; border-radius: 10px; }
+        .config-type-badge { font-size: .65rem; font-weight: 700; padding: .12rem .4rem; border-radius: 10px; margin-left: .2rem; }
+        .config-mixed { background: #f0eaff; color: #6030a0; }
+        .config-single { background: #e0f5e8; color: #1a6a38; }
+        .pallet-metrics { display: grid; grid-template-columns: repeat(3,1fr); gap: .35rem; margin-bottom: .5rem; }
+        .pallet-metric { text-align: center; background: #fafafa; border-radius: 3px; padding: .35rem .25rem; border: 1px solid #eeeef5; }
+        .pallet-metric .m-val { font-size: .88rem; font-weight: 700; color: #f08020; }
+        .pallet-metric .m-lbl { font-size: .6rem; color: #9090a8; margin-top: .08rem; }
+        .util-bar { height: 3px; background: #e8e8f0; border-radius: 2px; margin-bottom: .5rem; overflow: hidden; }
+        .util-fill { height: 100%; border-radius: 2px; background: #f08020; }
+        .layers-label { font-size: .62rem; font-weight: 700; color: #9090a8; text-transform: uppercase; letter-spacing: .05em; margin-bottom: .25rem; }
+        .layer-row { display: flex; justify-content: space-between; align-items: center; padding: .22rem .35rem; margin-bottom: .15rem; border-radius: 3px; font-size: .72rem; border: 1px solid #eeeef5; background: #fafafa; }
+        .layer-row.bottom-layer { border-color: #ffc890; background: #fff8f2; }
+        .layer-num { font-weight: 700; color: #b0b0c8; font-size: .62rem; margin-right: .25rem; }
+        .layer-sku { font-weight: 600; color: #2d2d3a; }
+        .layer-qty { color: #787890; font-size: .7rem; }
+        .audit-log { margin-top: 1rem; background: #fafafa; border-radius: 3px; padding: .85rem; border: 1px solid #e8e8f0; }
+        .audit-log h4 { font-size: .68rem; font-weight: 700; color: #787890; text-transform: uppercase; letter-spacing: .06em; margin-bottom: .5rem; }
+        .audit-entry { display: flex; gap: .65rem; font-size: .73rem; color: #4a4a5a; padding: .25rem 0; border-bottom: 1px solid #eeeef5; }
+        .audit-entry:last-child { border-bottom: none; }
+        .audit-time { color: #b0b0c8; white-space: nowrap; min-width: 54px; }
+        .tab-badge { display: inline-flex; align-items: center; background: #e8e8f0; color: #4a4a62; font-size: .62rem; font-weight: 700; padding: .06rem .38rem; border-radius: 10px; margin-left: .3rem; }
+        .tab-badge-auth { background: #d1fae5; color: #065f46; }
+        .lpn-badge-loaded { background: #d1fae5; color: #065f46; font-size: .67rem; font-weight: 700; padding: .1rem .45rem; border-radius: 10px; }
+        .lpn-badge-staged { background: #dbeafe; color: #1e40af; font-size: .67rem; font-weight: 700; padding: .1rem .45rem; border-radius: 10px; }
+
+        /* ── Trip Overview editable fields (new trip screen) ── */
+        .ov-field { display: flex; flex-direction: column; gap: .22rem; }
+        .ov-label { font-size: .72rem; color: #5a5a72; font-weight: 500; }
+        .ov-input { border: 1px solid #c8c8d8; border-radius: 3px; padding: .38rem .6rem; font-size: .8rem; color: #2d2d3a; outline: none; width: 100%; box-sizing: border-box; background: white; }
+        .ov-input:focus { border-color: #f08020; box-shadow: 0 0 0 2px rgba(240,128,32,.1); }
+        .ov-input-wrap { position: relative; }
+        .ov-input-wrap .ov-icon { position: absolute; right: .6rem; top: 50%; transform: translateY(-50%); color: #b0b0c8; font-size: .72rem; pointer-events: none; }
+
+        /* ── Add Trip modal inputs ── */
+        .addtrip-field { display: flex; flex-direction: column; gap: .28rem; }
+        .addtrip-field label { font-size: .78rem; color: #4a4a5a; font-weight: 500; }
+        .addtrip-input { width: 100%; border: 1px solid #c8c8d8; border-radius: 3px; padding: .42rem .65rem; font-size: .82rem; color: #2d2d3a; outline: none; box-sizing: border-box; }
+        .addtrip-input:focus { border-color: #f08020; box-shadow: 0 0 0 2px rgba(240,128,32,.12); }
+        .addtrip-input-wrap { position: relative; }
+        .addtrip-input-wrap .addtrip-icon { position: absolute; right: .65rem; top: 50%; transform: translateY(-50%); color: #b0b0c8; font-size: .75rem; pointer-events: none; }
+    </style>
+</head>
+<body>
+
+<!-- Top bar -->
+<div class="topbar">
+    <i class="fas fa-bars topbar-hamburger"></i>
+    <a class="topbar-brand" href="#">
+        <div class="logo-mark">D</div>
+        <span class="logo-text">Deposco</span>
+    </a>
+    <input type="text" class="topbar-search" placeholder="Search">
+    <div class="topbar-icons">
+        <i class="fas fa-th-large"></i>
+        <i class="fas fa-bell"></i>
+        <i class="fas fa-question-circle"></i>
+        <i class="fas fa-user-circle"></i>
+    </div>
+</div>
+
+<!-- View Switcher -->
+<div class="view-switcher">
+    <div class="view-tab active" onclick="switchView(1, this)"><span class="vt-num">1</span> Trip List</div>
+    <div class="view-tab" onclick="switchView(2, this)"><span class="vt-num">2</span> Stub Detail</div>
+    <div class="view-tab" onclick="switchView(5, this)"><span class="vt-num">3</span> Stub + Added Order</div>
+    <div class="view-tab" onclick="switchView(6, this)"><span class="vt-num">4</span> Trip 1 Detail</div>
+    <div class="view-tab" onclick="switchView(3, this)"><span class="vt-num">5</span> Trip Loading</div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     VIEW 1 — TMA Trip List (Global)
+═══════════════════════════════════════════════════ -->
+<div class="view active app-layout" id="view-1">
+    <nav class="sidebar">
+        <div class="sidebar-section-label">Application Menu</div>
+        <a class="sidebar-item" href="#"><i class="fas fa-database"></i> Master Data <i class="fas fa-chevron-right chevron"></i></a>
+        <a class="sidebar-item" href="#"><i class="fas fa-warehouse"></i> Warehouse Setup <i class="fas fa-chevron-right chevron"></i></a>
+        <a class="sidebar-item" href="#"><i class="fas fa-boxes"></i> Inventory Admin <i class="fas fa-chevron-right chevron"></i></a>
+        <a class="sidebar-item" href="#"><i class="fas fa-hand-paper"></i> Putaway <i class="fas fa-chevron-right chevron"></i></a>
+        <a class="sidebar-item" href="#"><i class="fas fa-shopping-bag"></i> Purchasing <i class="fas fa-chevron-right chevron"></i></a>
+        <a class="sidebar-item" href="#"><i class="fas fa-shopping-cart"></i> Orders <i class="fas fa-chevron-right chevron"></i></a>
+        <a class="sidebar-item" href="#"><i class="fas fa-layer-group"></i> Order Processing <i class="fas fa-chevron-right chevron"></i></a>
+        <a class="sidebar-item active" href="#"><i class="fas fa-list-alt"></i> Distribution <i class="fas fa-chevron-up chevron"></i></a>
+        <div class="sidebar-sub">
+            <a class="sidebar-item active" href="#" style="color:#f08020;">Trip Management</a>
+            <a class="sidebar-item" href="#">Pick Waves</a>
+            <a class="sidebar-item" href="#">Work Groups</a>
+            <a class="sidebar-item" href="#">Pick Tasks</a>
+            <a class="sidebar-item" href="#">Replenishment Tasks</a>
+            <a class="sidebar-item" href="#">Cartonization Requests</a>
+            <a class="sidebar-item" href="#">Cartonization Results</a>
+            <a class="sidebar-item" href="#">Pick Wave Build Profile</a>
+            <a class="sidebar-item" href="#">Order Release Profile</a>
+        </div>
+        <div class="sidebar-divider"></div>
+        <a class="sidebar-item" href="#"><i class="fas fa-box"></i> Packing <i class="fas fa-chevron-right chevron"></i></a>
+        <a class="sidebar-item" href="#"><i class="fas fa-shipping-fast"></i> Shipping <i class="fas fa-chevron-right chevron"></i></a>
+        <a class="sidebar-item" href="#"><i class="fas fa-file-invoice-dollar"></i> Billing <i class="fas fa-chevron-right chevron"></i></a>
+        <a class="sidebar-item" href="#"><i class="fas fa-calendar"></i> Events <i class="fas fa-chevron-right chevron"></i></a>
+        <a class="sidebar-item" href="#"><i class="fas fa-clock"></i> Schedulers <i class="fas fa-chevron-right chevron"></i></a>
+        <a class="sidebar-item" href="#"><i class="fas fa-chart-bar"></i> Performance <i class="fas fa-chevron-right chevron"></i></a>
+        <a class="sidebar-item" href="#"><i class="fas fa-cog"></i> Setup <i class="fas fa-chevron-right chevron"></i></a>
+        <a class="sidebar-item" href="#"><i class="fas fa-database"></i> General Entities <i class="fas fa-chevron-right chevron"></i></a>
+    </nav>
+    <div class="main">
+        <!-- Page header -->
+        <div class="page-chrome" style="padding:.6rem 1.25rem;">
+            <div class="title-row">
+                <i class="fas fa-chevron-left back-arrow"></i>
+                <span class="page-title" style="font-size:1rem;">Trip Management</span>
+                <div class="actions-bar">
+                    <button class="btn btn-primary"><i class="fas fa-plus"></i> New Trip</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Find a Trip -->
+        <div class="section-wrap" style="padding:.85rem 1.25rem 1rem;">
+            <div class="section-title" style="margin-bottom:.6rem;">Find a Trip</div>
+            <div style="display:flex;align-items:center;gap:0;margin-bottom:.5rem;">
+                <div style="display:flex;border:1px solid #d0d0de;border-radius:3px 0 0 3px;overflow:hidden;">
+                    <button class="v1-lookup-tab active" id="lt-number" onclick="setLookup('number')">Trip Number</button>
+                    <button class="v1-lookup-tab" id="lt-order" onclick="setLookup('order')">Order</button>
+                    <button class="v1-lookup-tab" id="lt-lpn" onclick="setLookup('lpn')">LPN</button>
+                </div>
+                <input type="text" id="lookup-input" placeholder="Enter trip number" style="flex:1;border:1px solid #d0d0de;border-left:none;border-radius:0;padding:.38rem .75rem;font-size:.8rem;outline:none;color:#2d2d3a;">
+                <button class="btn btn-secondary" style="border-radius:0 3px 3px 0;border-left:none;">Search</button>
+            </div>
+        </div>
+
+        <!-- Filter / Sort / Configure bar -->
+        <div style="background:white;border-bottom:1px solid #e0e0ea;padding:.45rem 1.25rem;display:flex;align-items:center;gap:.5rem;">
+            <div style="display:flex;align-items:center;gap:.35rem;border:1px solid #d0d0de;border-radius:3px;padding:.28rem .65rem;font-size:.76rem;cursor:pointer;color:#2d2d3a;background:white;">
+                <span style="font-size:.68rem;color:#7a7a92;">-Default</span>
+                <i class="fas fa-chevron-down" style="font-size:.55rem;color:#9090a8;"></i>
+            </div>
+            <button class="btn btn-secondary btn-sm" style="padding:.26rem .55rem;"><i class="fas fa-sync-alt" style="font-size:.65rem;"></i></button>
+            <button class="btn btn-secondary btn-sm"><i class="fas fa-filter" style="font-size:.7rem;"></i> Filter</button>
+            <button class="btn btn-secondary btn-sm"><i class="fas fa-sort" style="font-size:.7rem;"></i> Sort</button>
+            <span style="margin-left:auto;font-size:.72rem;color:#9090a8;display:flex;align-items:center;gap:.5rem;">
+                1 – 20 of 20
+                <button style="background:none;border:1px solid #d0d0de;border-radius:2px;width:22px;height:22px;cursor:pointer;color:#9090a8;font-size:.6rem;"><i class="fas fa-chevron-left"></i></button>
+                <button style="background:none;border:1px solid #d0d0de;border-radius:2px;width:22px;height:22px;cursor:pointer;color:#9090a8;font-size:.6rem;"><i class="fas fa-chevron-right"></i></button>
+            </span>
+            <button class="btn btn-secondary btn-sm"><i class="fas fa-th" style="font-size:.7rem;"></i> Configure</button>
+        </div>
+
+        <!-- Trip table -->
+        <div style="padding:0;flex:1;">
+            <div class="data-table-wrap">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th style="width:28px;"><input type="checkbox"></th>
+                            <th>Number <i class="fas fa-sort" style="font-size:.55rem;color:#b0b0c8;"></i><div class="col-sub">Trip</div></th>
+                            <th>Linked Trips<div class="col-sub">Trip</div></th>
+                            <th>Status <i class="fas fa-sort" style="font-size:.55rem;color:#b0b0c8;"></i><div class="col-sub">Trip</div></th>
+                            <th>Shipping Carrier<div class="col-sub">Trip</div></th>
+                            <th>Freight Type <i class="fas fa-sort" style="font-size:.55rem;color:#b0b0c8;"></i><div class="col-sub">Trip</div></th>
+                            <th>Dock Door – Name <i class="fas fa-sort" style="font-size:.55rem;color:#b0b0c8;"></i><div class="col-sub">ShippingDoor</div></th>
+                            <th>Delivery Type<div class="col-sub">Trip</div></th>
+                            <th>Reference Number<div class="col-sub">Trip</div></th>
+                            <th>Account Number<div class="col-sub">Trip</div></th>
+                            <th>Created Date <i class="fas fa-sort" style="font-size:.55rem;color:#b0b0c8;"></i><div class="col-sub">Trip</div></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Trip 1 for B2B-10042 — Loading (new status) -->
+                        <tr onclick="switchView(6, document.querySelectorAll('.view-tab')[3])">
+                            <td><input type="checkbox"></td>
+                            <td><a class="td-link">20260917081401</a></td>
+                            <td><div class="linked-popover-wrap"><span class="linked-chip" onclick="toggleLinkedTrips('lp-trip1', event)"><i class="fas fa-link" style="font-size:.52rem;"></i> 1 trip</span><div class="linked-popover" id="lp-trip1"><div class="linked-popover-label">Linked Trips</div><div class="linked-popover-item" onclick="switchView(2, document.querySelectorAll('.view-tab')[1]); event.stopPropagation();"><i class="fas fa-truck" style="font-size:.62rem;color:#b0b0c8;"></i> 20260917081601</div></div></div></td>
+                            <td id="v1-trip1-status">
+                                <span class="v1-sbadge v1-loading">Loading</span>
+                            </td>
+                            <td><span class="v1-pill">XPO Logistics</span></td>
+                            <td><span class="v1-pill">Freight</span></td>
+                            <td>SHIPPING_DOOR4</td>
+                            <td><span class="v1-pill">Outbound</span></td>
+                            <td>B2B-10042</td>
+                            <td>WMT-SE-DC</td>
+                            <td>2026-09-17 08:14</td>
+                        </tr>
+                        <!-- Trip 2 stub for B2B-10042 — Open -->
+                        <tr onclick="switchView(2, document.querySelectorAll('.view-tab')[1])">
+                            <td><input type="checkbox"></td>
+                            <td id="v1-trip2-number"><a class="td-link">20260917081601</a></td>
+                            <td><div class="linked-popover-wrap"><span class="linked-chip" onclick="toggleLinkedTrips('lp-trip2', event)"><i class="fas fa-link" style="font-size:.52rem;"></i> 1 trip</span><div class="linked-popover" id="lp-trip2"><div class="linked-popover-label">Linked Trips</div><div class="linked-popover-item" onclick="switchView(6, document.querySelectorAll('.view-tab')[3]); event.stopPropagation();"><i class="fas fa-truck" style="font-size:.62rem;color:#b0b0c8;"></i> 20260917081401</div></div></div></td>
+                            <td id="v1-trip2-status">
+                                <span class="v1-sbadge v1-open">Open</span>
+                            </td>
+                            <td><span class="v1-pill">XPO Logistics</span></td>
+                            <td><span class="v1-pill">Freight</span></td>
+                            <td>SHIPPING_DOOR6</td>
+                            <td><span class="v1-pill">Outbound</span></td>
+                            <td>B2B-10042</td>
+                            <td>WMT-SE-DC</td>
+                            <td>2026-09-17 08:16</td>
+                        </tr>
+                        <!-- Other existing trips for realism -->
+                        <tr><td><input type="checkbox"></td><td><a class="td-link">20260916154200</a></td><td>—</td><td><span class="v1-sbadge v1-closed">Closed</span></td><td><span class="v1-pill">General Freight</span></td><td><span class="v1-pill">Freight</span></td><td>SHIPPING_DOOR1</td><td><span class="v1-pill">Outbound</span></td><td>REF-88821</td><td>TGT-MW</td><td>2026-09-16 15:42</td></tr>
+                        <tr><td><input type="checkbox"></td><td><a class="td-link">20260916091033</a></td><td>—</td><td><span class="v1-sbadge v1-closed">Closed</span></td><td><span class="v1-pill">General Freight</span></td><td><span class="v1-pill">Freight</span></td><td>SHIPPING_DOOR2</td><td><span class="v1-pill">Outbound</span></td><td>–</td><td>–</td><td>2026-09-16 09:10</td></tr>
+                        <tr><td><input type="checkbox"></td><td><a class="td-link">20260915173005</a></td><td>—</td><td><span class="v1-sbadge v1-planned">Planned</span></td><td><span class="v1-pill">General Freight</span></td><td><span class="v1-pill">Freight</span></td><td>SHIPPING_DOOR1</td><td><span class="v1-pill">Outbound</span></td><td>CJTRIP2</td><td>456</td><td>2026-09-15 17:30</td></tr>
+                        <tr><td><input type="checkbox"></td><td><a class="td-link">20260915093201</a></td><td>—</td><td><span class="v1-sbadge v1-open">Open</span></td><td><span class="v1-pill">General Freight</span></td><td><span class="v1-pill">Freight</span></td><td>–</td><td><span class="v1-pill">Outbound</span></td><td>–</td><td>–</td><td>2026-09-15 09:32</td></tr>
+                        <tr><td><input type="checkbox"></td><td><a class="td-link">20260914182817</a></td><td>—</td><td><span class="v1-sbadge v1-planned">Planned</span></td><td><span class="v1-pill">General Freight</span></td><td><span class="v1-pill">Freight</span></td><td>SHIPPING_DOOR2</td><td><span class="v1-pill">Outbound</span></td><td>80017364829</td><td>AH700498765</td><td>2026-09-14 18:28</td></tr>
+                        <tr><td><input type="checkbox"></td><td><a class="td-link">20260914164501</a></td><td>—</td><td><span class="v1-sbadge v1-open">Open</span></td><td><span class="v1-pill">General Freight</span></td><td><span class="v1-pill">Freight</span></td><td>–</td><td><span class="v1-pill">Outbound</span></td><td>–</td><td>–</td><td>2026-09-14 16:45</td></tr>
+                        <tr><td><input type="checkbox"></td><td><a class="td-link">20260913165801</a></td><td>—</td><td><span class="v1-sbadge v1-planned">Planned</span></td><td><span class="v1-pill">General Freight</span></td><td><span class="v1-pill">Freight</span></td><td>SHIPPING_DOOR1</td><td><span class="v1-pill">Outbound</span></td><td>CJTRIP1</td><td>123</td><td>2026-09-13 16:58</td></tr>
+                        <tr><td><input type="checkbox"></td><td><a class="td-link">20260912154401</a></td><td>—</td><td><span class="v1-sbadge v1-closed">Closed</span></td><td><span class="v1-pill">General Freight</span></td><td><span class="v1-pill">Freight</span></td><td>SHIPPING_DOOR3</td><td><span class="v1-pill">Outbound</span></td><td>–</td><td>–</td><td>2026-09-12 15:44</td></tr>
+                        <tr><td><input type="checkbox"></td><td><a class="td-link">20260912152801</a></td><td>—</td><td><span class="v1-sbadge v1-closed">Closed</span></td><td><span class="v1-pill">General Freight</span></td><td><span class="v1-pill">Freight</span></td><td>SHIPPING_DOOR3</td><td><span class="v1-pill">Outbound</span></td><td>–</td><td>–</td><td>2026-09-12 15:28</td></tr>
+                        <tr><td><input type="checkbox"></td><td><a class="td-link">20260912152101</a></td><td>—</td><td><span class="v1-sbadge v1-draft">Draft</span></td><td><span class="v1-pill">General Freight</span></td><td><span class="v1-pill">Freight</span></td><td>–</td><td><span class="v1-pill">Outbound</span></td><td>–</td><td>–</td><td>2026-09-12 15:21</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     VIEW 2 — Trip 2 Stub Detail
+═══════════════════════════════════════════════════ -->
+<div class="view app-layout" id="view-2">
+    <nav class="sidebar">
+        <div class="sidebar-section-label">Application Menu</div>
+        <a class="sidebar-item" href="#"><i class="fas fa-database"></i> Master Data <i class="fas fa-chevron-right chevron"></i></a>
+        <a class="sidebar-item" href="#"><i class="fas fa-shopping-cart"></i> Orders <i class="fas fa-chevron-right chevron"></i></a>
+        <a class="sidebar-item" href="#"><i class="fas fa-layer-group"></i> Order Processing <i class="fas fa-chevron-right chevron"></i></a>
+        <a class="sidebar-item active" href="#"><i class="fas fa-truck"></i> Distribution <i class="fas fa-chevron-up chevron"></i></a>
+        <div class="sidebar-sub">
+            <a class="sidebar-item active" href="#" style="color:#f08020;">Trip Management</a>
+            <a class="sidebar-item" href="#">Pick Waves</a>
+            <a class="sidebar-item" href="#">Pick Tasks</a>
+        </div>
+        <div class="sidebar-divider"></div>
+        <a class="sidebar-item" href="#"><i class="fas fa-shipping-fast"></i> Shipping <i class="fas fa-chevron-right chevron"></i></a>
+        <a class="sidebar-item" href="#"><i class="fas fa-cog"></i> Setup <i class="fas fa-chevron-right chevron"></i></a>
+    </nav>
+    <div class="main">
+        <div class="page-chrome">
+            <div class="breadcrumb"><a href="#" onclick="switchView(1, document.querySelectorAll('.view-tab')[0]); return false;">Trip Management</a></div>
+            <div class="title-row">
+                <i class="fas fa-chevron-left back-arrow" onclick="switchView(1, document.querySelectorAll('.view-tab')[0])"></i>
+                <span class="page-title">20260917081601</span>
+                <span id="v2-badge-status" class="sbadge sbadge-open" style="font-size:.72rem;padding:.2rem .65rem;"><i class="fas fa-circle" style="font-size:.45rem;"></i> Open</span>
+                <span style="font-size:.72rem;color:#a0a0b8;margin-left:.2rem;">Created Sep 17, 2026 08:16</span>
+                <div class="actions-bar">
+                    <div class="actions-wrap">
+                        <button class="btn btn-secondary" onclick="toggleDrop('v2-actions', event)">Actions <i class="fas fa-chevron-down" style="font-size:.6rem;"></i></button>
+                        <div class="actions-dropdown" id="v2-actions">
+                            <div class="actions-dropdown-section">Trip</div>
+                            <div class="actions-dropdown-item"><i class="fas fa-edit"></i> Modify Trip</div>
+                            <div class="actions-dropdown-item"><i class="fas fa-print"></i> Carrier Booking</div>
+                            <div class="actions-dropdown-item danger"><i class="fas fa-trash-alt"></i> Delete Stub</div>
+                        </div>
+                    </div>
+                    <button class="btn btn-secondary">Save Trip</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Info panel -->
+        <div class="info-panel" id="v2-info-panel">
+            <i class="fas fa-info-circle"></i>
+            <div>
+                <strong>This trip is a placeholder for parallel loading.</strong>
+                All containers for order <a class="td-link">10042</a> are currently assigned to trip 20260917081401. Containers will be assigned to this trip when scanned during Trip Loading.
+            </div>
+        </div>
+
+        <!-- Trip Overview -->
+        <div class="section-wrap">
+            <div class="section-title">Trip Overview</div>
+            <div class="fields-grid">
+                <div class="field-item">
+                    <span class="field-label">Trip Number</span>
+                    <span class="field-value">20260917081601 <i class="fas fa-lock lock-icon"></i></span>
+                </div>
+                <div class="field-item">
+                    <span class="field-label">Order</span>
+                    <span class="field-value link">B2B-10042 <i class="fas fa-external-link-alt" style="font-size:.6rem;"></i></span>
+                </div>
+                <div class="field-item">
+                    <span class="field-label">Dock Door</span>
+                    <span class="field-value link">D-06 <i class="fas fa-lock lock-icon"></i></span>
+                </div>
+                <div class="field-item">
+                    <span class="field-label">Carrier</span>
+                    <span class="field-value">XPO Logistics <i class="fas fa-lock lock-icon"></i></span>
+                </div>
+                <div class="field-item">
+                    <span class="field-label">Estimated Delivery</span>
+                    <span class="field-value">Sep 19, 2026 <i class="fas fa-lock lock-icon"></i></span>
+                </div>
+                <div class="field-item">
+                    <span class="field-label">SCAC</span>
+                    <span class="field-value">XPOL <i class="fas fa-lock lock-icon"></i></span>
+                </div>
+                <div class="field-item">
+                    <span class="field-label">Linked Trips</span>
+                    <span class="field-value"><a class="td-link" onclick="switchView(6, document.querySelectorAll('.view-tab')[3])">20260917081401</a></span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tabs -->
+        <div class="tab-bar">
+            <div class="tab active" onclick="switchInnerTab('v2', 'orders', this)">Orders</div>
+            <div class="tab" onclick="switchInnerTab('v2', 'shipments', this)">Shipments</div>
+            <div class="tab" onclick="switchInnerTab('v2', 'containers', this)">Containers</div>
+            <div class="tab" onclick="switchInnerTab('v2', 'shipped', this)">Shipped Containers</div>
+            <div class="tab" onclick="switchInnerTab('v2', 'palletopt', this)">Pallet Optimization</div>
+        </div>
+        <div class="tab-content">
+            <div class="tab-pane active" id="v2-orders">
+                <div class="table-toolbar">
+                    <span class="table-toolbar-title">Orders</span>
+                    <div class="table-toolbar-right">
+                        <button class="btn btn-secondary btn-sm"><i class="fas fa-plus"></i> Add Order</button>
+                        <button class="btn btn-secondary btn-sm"><i class="fas fa-filter" style="font-size:.65rem;"></i> Filter</button>
+                        <button class="btn btn-secondary btn-sm"><i class="fas fa-sort" style="font-size:.65rem;"></i> Sort</button>
+                        <button class="btn btn-secondary btn-sm"><i class="fas fa-th" style="font-size:.65rem;"></i> Configure</button>
+                    </div>
+                </div>
+                <div class="data-table-wrap">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Type</th>
+                                <th>Number</th>
+                                <th>Created Date</th>
+                                <th>Other Reference Number</th>
+                                <th>Custom Attribute 1</th>
+                                <th>Weight</th>
+                                <th>Order Status</th>
+                                <th>Order Source</th>
+                                <th>Business Unit – Name</th>
+                                <th>Ship From Name</th>
+                                <th>Total Line Count API</th>
+                                <th>Total Qty Ordered</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><span class="v1-pill">Sales Order</span></td>
+                                <td><a class="td-link">10042</a></td>
+                                <td>2026-09-16 14:22</td>
+                                <td>—</td>
+                                <td>B2B</td>
+                                <td>4,200</td>
+                                <td><span class="sbadge sbadge-staged" style="font-size:.67rem;">Pick Complete</span></td>
+                                <td>EDI</td>
+                                <td>DEPOSCO3PL</td>
+                                <td>Gold Parts Co</td>
+                                <td>12</td>
+                                <td>80.0</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="tab-pane" id="v2-shipments">
+                <div class="table-toolbar">
+                    <span class="table-toolbar-title">Shipments</span>
+                </div>
+                <div class="data-table-wrap">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Shipment ID</th>
+                                <th>Order</th>
+                                <th>Status</th>
+                                <th>Pallets</th>
+                                <th>Total Weight (lbs)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><a class="td-link">SHP-10042-2</a></td>
+                                <td><a class="td-link">B2B-10042</a></td>
+                                <td><span class="sbadge sbadge-staged" style="font-size:.67rem;">Pick Complete</span></td>
+                                <td style="color:#b0b0c8;">— (on Trip 1)</td>
+                                <td style="color:#b0b0c8;">—</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="tab-pane" id="v2-containers">
+                <div class="empty-state">
+                    <i class="fas fa-pallet" style="color:#d0d0e0;"></i>
+                    <p>No pallets assigned yet.</p>
+                    <p class="empty-hint">Pallets will be assigned to this trip when workers scan LPNs at the loading dock during parallel loading.</p>
+                </div>
+            </div>
+            <div class="tab-pane" id="v2-shipped">
+                <div class="empty-state"><i class="fas fa-truck-loading"></i><p>No shipped containers.</p></div>
+            </div>
+            <!-- Pallet Optimization tab -->
+            <div class="tab-pane" id="v2-palletopt">
+                <div style="background:white;border:1px solid #e0e0ea;border-radius:4px;">
+                    <div class="opt-results-header">
+                        <h3>
+                            <i class="fas fa-layer-group" style="color:#a0a0b8;"></i>
+                            Pallet Optimization Results
+                        </h3>
+                        <div style="display:flex;gap:.35rem;">
+                            <button class="btn btn-secondary btn-sm" disabled><i class="fas fa-download"></i> Export CSV</button>
+                        </div>
+                    </div>
+                    <div class="opt-results-body">
+                        <div class="empty-state" style="padding:2.5rem 1rem;">
+                            <i class="fas fa-box-open" style="color:#d0d0e0;"></i>
+                            <p>No optimization results yet.</p>
+                            <p class="empty-hint">Results will appear here after Pallet Optimization has been run on the linked trip.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     VIEW 3 — Loading Dock: Trip Selector
+═══════════════════════════════════════════════════ -->
+<div class="view app-layout" id="view-3">
+    <nav class="sidebar">
+        <div class="sidebar-section-label">Application Menu</div>
+        <a class="sidebar-item" href="#"><i class="fas fa-database"></i> Master Data <i class="fas fa-chevron-right chevron"></i></a>
+        <a class="sidebar-item" href="#"><i class="fas fa-shopping-cart"></i> Orders <i class="fas fa-chevron-right chevron"></i></a>
+        <a class="sidebar-item active" href="#"><i class="fas fa-truck"></i> Distribution <i class="fas fa-chevron-up chevron"></i></a>
+        <div class="sidebar-sub">
+            <a class="sidebar-item active" href="#" style="color:#f08020;">Trip Management</a>
+            <a class="sidebar-item" href="#">Pallet Loading</a>
+        </div>
+        <div class="sidebar-divider"></div>
+        <a class="sidebar-item" href="#"><i class="fas fa-cog"></i> Setup <i class="fas fa-chevron-right chevron"></i></a>
+    </nav>
+    <div class="main">
+        <div class="page-chrome">
+            <div class="breadcrumb"><a href="#">Trip Management</a> › <a href="#" onclick="switchView(1, document.querySelectorAll('.view-tab')[0]); return false;">B2B-10042</a> › Pallet Loading</div>
+            <div class="title-row">
+                <i class="fas fa-chevron-left back-arrow" onclick="switchView(1, document.querySelectorAll('.view-tab')[0])"></i>
+                <span class="page-title">Pallet Loading</span>
+                <span class="page-subtitle">— B2B-10042 / Walmart</span>
+            </div>
+        </div>
+        <div class="handheld-wrap">
+            <div class="handheld-device">
+
+                <!-- Screen 1: Identifier Input -->
+                <div class="hh-screen active" id="hh-1">
+                    <div class="hh-header">Identifier Input</div>
+                    <div class="hh-body">
+                        <div class="hh-row"><span class="hh-lbl">User:</span><span class="hh-val">chris.jacobson</span></div>
+                        <div class="hh-row"><span class="hh-lbl">Facility:</span><span class="hh-val">DEPOSCO3PL</span></div>
+                        <div class="hh-row"><span class="hh-lbl">Zone:</span><span class="hh-val">Loading</span></div>
+                        <p class="hh-prompt">Scan or enter a trip, shipping door, or container:</p>
+                        <input class="hh-input" id="hh-scan-input" type="text" value="" onkeydown="if(event.key==='Enter') submitHHScan()">
+                        <div id="hh-scan-error" style="display:none;color:#d32f2f;font-size:.72rem;margin-top:.35rem;">Trip not found. Please check the number and try again.</div>
+                    </div>
+                    <div class="hh-footer">
+                        <button class="hh-btn hh-btn-back" onclick="switchView(1, document.querySelectorAll('.view-tab')[0])">Back</button>
+                        <button class="hh-btn hh-btn-submit" onclick="submitHHScan()">Submit</button>
+                    </div>
+                </div>
+
+                <!-- Screen 2: Trip Loading -->
+                <div class="hh-screen" id="hh-2">
+                    <div class="hh-header">Trip Loading</div>
+                    <div class="hh-body">
+                        <div class="hh-row"><span class="hh-lbl">Trip:</span><span class="hh-val">20260917081401</span></div>
+                        <div class="hh-section-title">Loaded Containers</div>
+                        <table class="hh-table">
+                            <thead><tr><th>Number</th><th>Weight</th><th>Order</th></tr></thead>
+                            <tbody>
+                                <tr><td class="hh-lpn">LPN-884509</td><td>80</td><td>10042</td></tr>
+                                <tr><td class="hh-lpn">LPN-884510</td><td>80</td><td>10042</td></tr>
+                                <tr><td class="hh-lpn">LPN-884511</td><td>80</td><td>10042</td></tr>
+                                <tr><td class="hh-lpn">LPN-884512</td><td>80</td><td>10042</td></tr>
+                                <tr><td colspan="3" style="color:#9090a8;font-style:italic;">+ 34 more</td></tr>
+                            </tbody>
+                        </table>
+                        <div class="hh-section-title">Containers to Load (12)</div>
+                        <table class="hh-table">
+                            <thead><tr><th>Number</th><th>Weight</th><th>Order</th></tr></thead>
+                            <tbody>
+                                <tr><td class="hh-lpn">LPN-884521</td><td>80</td><td>10042</td></tr>
+                                <tr><td class="hh-lpn">LPN-884522</td><td>80</td><td>10042</td></tr>
+                                <tr><td class="hh-lpn">LPN-884523</td><td>40</td><td>10042</td></tr>
+                                <tr><td colspan="3" style="color:#9090a8;font-style:italic;">+ 9 more</td></tr>
+                            </tbody>
+                        </table>
+                        <div class="hh-container-row">
+                            <span class="hh-container-lbl">Container:</span>
+                            <input class="hh-input-sm" type="text" style="flex:1;">
+                        </div>
+                    </div>
+                    <div class="hh-footer">
+                        <button class="hh-btn hh-btn-back" onclick="switchHH(1)">Back</button>
+                        <button class="hh-btn hh-btn-exit" onclick="switchHH(5)">Trip Full</button>
+                        <button class="hh-btn hh-btn-submit" onclick="switchHH(3)">Summary</button>
+                    </div>
+                </div>
+
+                <!-- Screen 3: Trip Summary -->
+                <div class="hh-screen" id="hh-3">
+                    <div class="hh-header">Trip Summary</div>
+                    <div class="hh-body">
+                        <div class="hh-row"><span class="hh-lbl">Trip:</span><span class="hh-val">20260917081401</span></div>
+                        <div class="hh-row"><span class="hh-lbl">Shipping Door:</span><span class="hh-val">SHIPPING_DOOR4</span></div>
+                        <div class="hh-row"><span class="hh-lbl">Orders on Trip:</span><span style="font-size:.8rem;color:#1e1e2a;font-weight:500;">1</span></div>
+                        <div class="hh-row"><span class="hh-lbl">Loaded Containers:</span><span style="font-size:.8rem;color:#1e1e2a;font-weight:500;">50</span></div>
+                        <div class="hh-row"><span class="hh-lbl">Expected Weight:</span><span style="font-size:.8rem;color:#1e1e2a;font-weight:500;">4,200.00 LB</span></div>
+                        <div class="hh-row"><span class="hh-lbl">Loaded Weight:</span><span style="font-size:.8rem;color:#1e1e2a;font-weight:500;">4,200.00 LB</span></div>
+                    </div>
+                    <div class="hh-footer">
+                        <button class="hh-btn hh-btn-back" onclick="switchHH(2)">Back</button>
+                        <button class="hh-btn hh-btn-submit" onclick="switchHH(4)">Submit</button>
+                    </div>
+                </div>
+
+                <!-- Screen 4: Close Trip -->
+                <div class="hh-screen" id="hh-4">
+                    <div class="hh-header">Close Trip</div>
+                    <div class="hh-body">
+                        <div class="hh-row" style="margin-bottom:.65rem;"><span class="hh-lbl">Trip #:</span><span class="hh-val">20260917081401</span></div>
+                        <div class="hh-field-row">
+                            <span class="hh-field-label"><span class="hh-req">* </span>Carrier Equipment Number:</span>
+                            <input class="hh-input-sm" type="text">
+                        </div>
+                        <div class="hh-field-row">
+                            <span class="hh-field-label">License Number:</span>
+                            <input class="hh-input-sm" type="text">
+                        </div>
+                        <div class="hh-field-row">
+                            <span class="hh-field-label"><span class="hh-req">* </span>Reference Number:</span>
+                            <input class="hh-input-sm" type="text" value="B2B-10042">
+                        </div>
+                        <div class="hh-field-row">
+                            <span class="hh-field-label"><span class="hh-req">* </span>SCAC:</span>
+                            <input class="hh-input-sm" type="text">
+                        </div>
+                        <div class="hh-field-row">
+                            <span class="hh-field-label">Seal Number:</span>
+                            <input class="hh-input-sm" type="text">
+                        </div>
+                        <div class="hh-field-row">
+                            <span class="hh-field-label">Transportation Method:</span>
+                            <input class="hh-input-sm" type="text" value="LT">
+                        </div>
+                    </div>
+                    <div class="hh-footer">
+                        <button class="hh-btn hh-btn-back" onclick="switchHH(3)">Back</button>
+                        <button class="hh-btn hh-btn-submit" onclick="closeTrip1()">Close Trip</button>
+                        <button class="hh-btn hh-btn-exit" onclick="switchView(1, document.querySelectorAll('.view-tab')[0])">Exit</button>
+                    </div>
+                </div>
+
+                <!-- Screen 5: Trip Full -->
+                <div class="hh-screen" id="hh-5">
+                    <div class="hh-header">Trip Full</div>
+                    <div class="hh-body">
+                        <div class="hh-row"><span class="hh-lbl">Trip:</span><span class="hh-val">20260917081401</span></div>
+                        <p class="hh-prompt" style="margin-top:.6rem;">Closing this trip. The following containers will be auto-assigned to trip 20260917081601:</p>
+                        <table class="hh-table">
+                            <thead><tr><th>Container</th><th>Weight</th><th>Order</th></tr></thead>
+                            <tbody>
+                                <tr><td class="hh-lpn">LPN-884521</td><td>80</td><td>10042</td></tr>
+                                <tr><td class="hh-lpn">LPN-884522</td><td>80</td><td>10042</td></tr>
+                                <tr><td class="hh-lpn">LPN-884523</td><td>40</td><td>10042</td></tr>
+                                <tr><td class="hh-lpn">LPN-884524</td><td>25</td><td>10042</td></tr>
+                                <tr><td class="hh-lpn">LPN-884525</td><td>25</td><td>10042</td></tr>
+                                <tr><td colspan="3" style="color:#9090a8;font-style:italic;">+ 7 more</td></tr>
+                            </tbody>
+                            <tfoot><tr><td colspan="3" style="color:#5a5a72;font-size:.68rem;padding-top:.3rem;">12 containers total — a BOL will be generated for trip 20260917081401.</td></tr></tfoot>
+                        </table>
+                    </div>
+                    <div class="hh-footer">
+                        <button class="hh-btn hh-btn-back" onclick="switchHH(2)">Back</button>
+                        <button class="hh-btn hh-btn-submit" onclick="confirmTruckFull()">Continue</button>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     VIEW 4 — Trip Full Confirmation Modal
+═══════════════════════════════════════════════════ -->
+<div class="view app-layout" id="view-4">
+    <nav class="sidebar">
+        <div class="sidebar-section-label">Application Menu</div>
+        <a class="sidebar-item" href="#"><i class="fas fa-database"></i> Master Data <i class="fas fa-chevron-right chevron"></i></a>
+        <a class="sidebar-item" href="#"><i class="fas fa-shopping-cart"></i> Orders <i class="fas fa-chevron-right chevron"></i></a>
+        <a class="sidebar-item active" href="#"><i class="fas fa-truck"></i> Distribution <i class="fas fa-chevron-up chevron"></i></a>
+        <div class="sidebar-sub">
+            <a class="sidebar-item active" href="#" style="color:#f08020;">Trip Management</a>
+            <a class="sidebar-item" href="#">Pallet Loading</a>
+        </div>
+        <div class="sidebar-divider"></div>
+        <a class="sidebar-item" href="#"><i class="fas fa-cog"></i> Setup <i class="fas fa-chevron-right chevron"></i></a>
+    </nav>
+    <div class="main" style="filter: brightness(.92) blur(1px); pointer-events: none; user-select: none;">
+        <div class="page-chrome">
+            <div class="breadcrumb"><a href="#">Trip Management</a> › B2B-10042 › Pallet Loading</div>
+            <div class="title-row">
+                <i class="fas fa-chevron-left back-arrow"></i>
+                <span class="page-title">Pallet Loading — 20260917081401</span>
+                <span class="sbadge sbadge-loading" style="font-size:.72rem;padding:.2rem .65rem;"><i class="fas fa-circle" style="font-size:.45rem;"></i> Loading</span>
+            </div>
+        </div>
+        <div class="section-wrap">
+            <div class="section-title">Loading Progress — Trip 1</div>
+            <div class="fields-grid" style="grid-template-columns: repeat(4,1fr);">
+                <div class="field-item"><span class="field-label">Dock Door</span><span class="field-value">D-04</span></div>
+                <div class="field-item"><span class="field-label">Carrier</span><span class="field-value">XPO Logistics</span></div>
+                <div class="field-item"><span class="field-label">LPNs Loaded</span><span class="field-value" style="color:#28a060;">38 / 50</span></div>
+                <div class="field-item"><span class="field-label">Remaining</span><span class="field-value">12</span></div>
+            </div>
+        </div>
+        <div class="tab-content">
+            <div class="banner banner-warn">
+                <i class="fas fa-exclamation-triangle"></i>
+                <div>
+                    <strong>12 pallets have not yet been loaded onto this truck.</strong>
+                    Click "Trip Full" to close Trip 1 and auto-assign remaining pallets to Trip 2.
+                </div>
+            </div>
+            <div class="data-table-wrap">
+                <table class="data-table">
+                    <thead><tr><th>LPN</th><th>Item</th><th>Qty</th><th>Status</th></tr></thead>
+                    <tbody>
+                        <tr><td style="color:#f08020;font-weight:700;">LPN-884509</td><td>SKU-1001 · Widget Box A</td><td>80</td><td><span class="sbadge sbadge-loading">Loaded</span></td></tr>
+                        <tr><td style="color:#f08020;font-weight:700;">LPN-884510</td><td>SKU-1001 · Widget Box A</td><td>80</td><td><span class="sbadge sbadge-loading">Loaded</span></td></tr>
+                        <tr><td style="color:#f08020;font-weight:700;">LPN-884511</td><td>SKU-1002 · Widget Box B</td><td>40</td><td><span class="sbadge sbadge-loading">Loaded</span></td></tr>
+                        <tr><td style="color:#f08020;font-weight:700;">LPN-884512</td><td>SKU-1002 · Widget Box B</td><td>40</td><td><span class="sbadge sbadge-loading">Loaded</span></td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Trip Full Modal (always visible on view 4) -->
+<div class="modal-overlay open" id="truck-full-modal" style="display:none;">
+    <div class="modal">
+        <div class="modal-header">
+            <h2><i class="fas fa-truck"></i> Trip Full — Close Trip 1?</h2>
+            <button class="modal-close" onclick="closeTruckFullModal()"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="modal-body">
+            <p style="font-size:.82rem;color:#4a4a5a;margin-bottom:.85rem;">
+                Trip 1 will be closed. The following pallets have not been loaded and will be automatically assigned to <strong>Trip 2</strong>:
+            </p>
+            <table class="lpn-table">
+                <thead>
+                    <tr><th>LPN</th><th>Item</th><th>Qty</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td style="font-weight:700;color:#f08020;">LPN-884521</td><td>SKU-1001 · Widget Box A</td><td>80</td></tr>
+                    <tr><td style="font-weight:700;color:#f08020;">LPN-884522</td><td>SKU-1001 · Widget Box A</td><td>80</td></tr>
+                    <tr><td style="font-weight:700;color:#f08020;">LPN-884523</td><td>SKU-1002 · Widget Box B</td><td>40</td></tr>
+                    <tr><td style="font-weight:700;color:#f08020;">LPN-884524</td><td>SKU-3001 · Food Pack A</td><td>25</td></tr>
+                    <tr><td style="font-weight:700;color:#f08020;">LPN-884525</td><td>SKU-1003 · Widget Box C</td><td>25</td></tr>
+                </tbody>
+                <tfoot>
+                    <tr><td colspan="3">12 pallets total — showing 5 of 12</td></tr>
+                </tfoot>
+            </table>
+            <p style="font-size:.76rem;color:#787890;">
+                A BOL will be generated for Trip 1 upon closing. Trip 2 will transition to <strong>Loading</strong> status and workers can immediately begin loading remaining pallets at Dock D-06.
+            </p>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closeTruckFullModal()">Cancel</button>
+            <button class="btn btn-primary" onclick="confirmTruckFull()"><i class="fas fa-check"></i> Confirm &amp; Close Trip 1</button>
+        </div>
+    </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     VIEW 5 — Trip 2 Stub Detail (with additional order added)
+═══════════════════════════════════════════════════ -->
+<div class="view app-layout" id="view-5">
+    <nav class="sidebar">
+        <div class="sidebar-section-label">Application Menu</div>
+        <a class="sidebar-item" href="#"><i class="fas fa-database"></i> Master Data <i class="fas fa-chevron-right chevron"></i></a>
+        <a class="sidebar-item" href="#"><i class="fas fa-shopping-cart"></i> Orders <i class="fas fa-chevron-right chevron"></i></a>
+        <a class="sidebar-item" href="#"><i class="fas fa-layer-group"></i> Order Processing <i class="fas fa-chevron-right chevron"></i></a>
+        <a class="sidebar-item active" href="#"><i class="fas fa-truck"></i> Distribution <i class="fas fa-chevron-up chevron"></i></a>
+        <div class="sidebar-sub">
+            <a class="sidebar-item active" href="#" style="color:#f08020;">Trip Management</a>
+            <a class="sidebar-item" href="#">Pick Waves</a>
+            <a class="sidebar-item" href="#">Pick Tasks</a>
+        </div>
+        <div class="sidebar-divider"></div>
+        <a class="sidebar-item" href="#"><i class="fas fa-shipping-fast"></i> Shipping <i class="fas fa-chevron-right chevron"></i></a>
+        <a class="sidebar-item" href="#"><i class="fas fa-cog"></i> Setup <i class="fas fa-chevron-right chevron"></i></a>
+    </nav>
+    <div class="main">
+        <div class="page-chrome">
+            <div class="breadcrumb"><a href="#" onclick="switchView(1, document.querySelectorAll('.view-tab')[0]); return false;">Trip Management</a></div>
+            <div class="title-row">
+                <i class="fas fa-chevron-left back-arrow" onclick="switchView(1, document.querySelectorAll('.view-tab')[0])"></i>
+                <span class="page-title">20260917081601</span>
+                <span class="sbadge sbadge-open" style="font-size:.72rem;padding:.2rem .65rem;"><i class="fas fa-circle" style="font-size:.45rem;"></i> Open</span>
+                <span style="font-size:.72rem;color:#a0a0b8;margin-left:.2rem;">Updated Sep 17, 2026 09:02</span>
+                <div class="actions-bar">
+                    <div class="actions-wrap">
+                        <button class="btn btn-secondary" onclick="toggleDrop('v5-actions', event)">Actions <i class="fas fa-chevron-down" style="font-size:.6rem;"></i></button>
+                        <div class="actions-dropdown" id="v5-actions">
+                            <div class="actions-dropdown-section">Trip</div>
+                            <div class="actions-dropdown-item"><i class="fas fa-edit"></i> Modify Trip</div>
+                            <div class="actions-dropdown-item"><i class="fas fa-print"></i> Carrier Booking</div>
+                            <div class="actions-dropdown-item danger"><i class="fas fa-trash-alt"></i> Delete Stub</div>
+                        </div>
+                    </div>
+                    <button class="btn btn-secondary">Save Trip</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Updated info panel — mixed state -->
+        <div class="info-panel" style="background:#fef3c7;border-left-color:#d97706;color:#78350f;">
+            <i class="fas fa-info-circle" style="color:#d97706;"></i>
+            <div>
+                <strong>This trip has a linked order for parallel loading.</strong>
+                All containers for order <a class="td-link" style="color:#c05a00;">10042</a> are currently assigned to trip 20260917081401. Containers will be assigned to this trip when scanned during Trip Loading.
+            </div>
+        </div>
+
+        <!-- Trip Overview -->
+        <div class="section-wrap">
+            <div class="section-title">Trip Overview</div>
+            <div class="fields-grid">
+                <div class="field-item">
+                    <span class="field-label">Trip Number</span>
+                    <span class="field-value">20260917081601 <i class="fas fa-lock lock-icon"></i></span>
+                </div>
+                <div class="field-item">
+                    <span class="field-label">Primary Order</span>
+                    <span class="field-value link">B2B-10042 <i class="fas fa-external-link-alt" style="font-size:.6rem;"></i></span>
+                </div>
+                <div class="field-item">
+                    <span class="field-label">Dock Door</span>
+                    <span class="field-value link">D-06 <i class="fas fa-lock lock-icon"></i></span>
+                </div>
+                <div class="field-item">
+                    <span class="field-label">Carrier</span>
+                    <span class="field-value">XPO Logistics <i class="fas fa-lock lock-icon"></i></span>
+                </div>
+                <div class="field-item">
+                    <span class="field-label">Orders on Trip</span>
+                    <span class="field-value">2</span>
+                </div>
+                <div class="field-item">
+                    <span class="field-label">LPNs Loaded</span>
+                    <span class="field-value" style="color:#b0b0c8;">0</span>
+                </div>
+                <div class="field-item">
+                    <span class="field-label">Estimated Delivery</span>
+                    <span class="field-value">Sep 19, 2026 <i class="fas fa-lock lock-icon"></i></span>
+                </div>
+                <div class="field-item">
+                    <span class="field-label">SCAC</span>
+                    <span class="field-value">XPOL <i class="fas fa-lock lock-icon"></i></span>
+                </div>
+                <div class="field-item">
+                    <span class="field-label">Linked Trips</span>
+                    <span class="field-value"><a class="td-link" onclick="switchView(6, document.querySelectorAll('.view-tab')[3])">20260917081401</a></span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tabs -->
+        <div class="tab-bar">
+            <div class="tab active" onclick="switchInnerTabV5('v5', 'orders', this)">Orders <span style="display:inline-flex;align-items:center;background:#e8e8f0;color:#4a4a62;font-size:.62rem;font-weight:700;padding:.06rem .38rem;border-radius:10px;margin-left:.3rem;">2</span></div>
+            <div class="tab" onclick="switchInnerTabV5('v5', 'shipments', this)">Shipments</div>
+            <div class="tab" onclick="switchInnerTabV5('v5', 'containers', this)">Containers</div>
+            <div class="tab" onclick="switchInnerTabV5('v5', 'shipped', this)">Shipped Containers</div>
+            <div class="tab" onclick="switchInnerTabV5('v5', 'palletopt', this)">Pallet Optimization</div>
+        </div>
+        <div class="tab-content">
+            <!-- Orders tab — active, shows both orders -->
+            <div class="tab-pane active" id="v5-orders">
+                <div class="table-toolbar">
+                    <span class="table-toolbar-title">Orders</span>
+                    <div class="table-toolbar-right">
+                        <button class="btn btn-secondary btn-sm"><i class="fas fa-plus"></i> Add Order</button>
+                        <button class="btn btn-secondary btn-sm"><i class="fas fa-filter" style="font-size:.65rem;"></i> Filter</button>
+                        <button class="btn btn-secondary btn-sm"><i class="fas fa-sort" style="font-size:.65rem;"></i> Sort</button>
+                        <button class="btn btn-secondary btn-sm"><i class="fas fa-th" style="font-size:.65rem;"></i> Configure</button>
+                    </div>
+                </div>
+                <div class="data-table-wrap">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Type</th>
+                                <th>Number</th>
+                                <th>Created Date</th>
+                                <th>Other Reference Number</th>
+                                <th>Custom Attribute 1</th>
+                                <th>Weight</th>
+                                <th>Order Status</th>
+                                <th>Order Source</th>
+                                <th>Business Unit – Name</th>
+                                <th>Ship From Name</th>
+                                <th>Total Line Count API</th>
+                                <th>Total Qty Ordered</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><span class="v1-pill">Sales Order</span></td>
+                                <td><a class="td-link">10042</a></td>
+                                <td>2026-09-16 14:22</td>
+                                <td>—</td>
+                                <td>B2B</td>
+                                <td>4,200</td>
+                                <td><span class="sbadge sbadge-staged" style="font-size:.67rem;">Pick Complete</span></td>
+                                <td>EDI</td>
+                                <td>DEPOSCO3PL</td>
+                                <td>Gold Parts Co</td>
+                                <td>12</td>
+                                <td>80.0</td>
+                            </tr>
+                            <tr>
+                                <td><span class="v1-pill">Sales Order</span></td>
+                                <td><a class="td-link">10055</a></td>
+                                <td>2026-09-17 07:05</td>
+                                <td>—</td>
+                                <td>B2B</td>
+                                <td>1,840</td>
+                                <td><span class="sbadge sbadge-open" style="font-size:.67rem;">Picking</span></td>
+                                <td>EDI</td>
+                                <td>DEPOSCO3PL</td>
+                                <td>Gold Parts Co</td>
+                                <td>6</td>
+                                <td>22.0</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="tab-pane" id="v5-shipments">
+                <div class="empty-state"><i class="fas fa-file-invoice"></i><p>No shipments yet.</p></div>
+            </div>
+            <!-- Containers tab — split order empty, standard order pending pick -->
+            <div class="tab-pane" id="v5-containers">
+                <div class="banner banner-warn" style="margin-bottom:.85rem;">
+                    <i class="fas fa-info-circle"></i>
+                    <div>
+                        <strong>B2B-10042 pallets are not shown here.</strong>
+                        These pallets are currently assigned to Trip 1. They will appear on this trip once workers scan them at the loading dock.
+                    </div>
+                </div>
+                <div class="empty-state" style="padding:2rem;">
+                    <i class="fas fa-pallet" style="color:#d0d0e0;"></i>
+                    <p>No pallets loaded yet.</p>
+                    <p class="empty-hint">B2B-10042 pallets will transfer here at loading time. B2B-10055 pallets will appear here once picking is complete.</p>
+                </div>
+            </div>
+            <div class="tab-pane" id="v5-shipped">
+                <div class="empty-state"><i class="fas fa-truck-loading"></i><p>No shipped containers.</p></div>
+            </div>
+            <!-- Pallet Optimization tab -->
+            <div class="tab-pane" id="v5-palletopt">
+                <div style="background:white;border:1px solid #e0e0ea;border-radius:4px;">
+                    <div class="opt-results-header">
+                        <h3>
+                            <i class="fas fa-layer-group" style="color:#a0a0b8;"></i>
+                            Pallet Optimization Results
+                        </h3>
+                        <div style="display:flex;gap:.35rem;">
+                            <button class="btn btn-secondary btn-sm" disabled><i class="fas fa-download"></i> Export CSV</button>
+                        </div>
+                    </div>
+                    <div class="opt-results-body">
+                        <div class="empty-state" style="padding:2.5rem 1rem;">
+                            <i class="fas fa-box-open" style="color:#d0d0e0;"></i>
+                            <p>No optimization results yet.</p>
+                            <p class="empty-hint">Results will appear here after Pallet Optimization has been run on the linked trip.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     VIEW 6 — Trip 1 Detail
+═══════════════════════════════════════════════════ -->
+<div class="view app-layout" id="view-6">
+    <nav class="sidebar">
+        <div class="sidebar-section-label">Application Menu</div>
+        <a class="sidebar-item" href="#"><i class="fas fa-database"></i> Master Data <i class="fas fa-chevron-right chevron"></i></a>
+        <a class="sidebar-item" href="#"><i class="fas fa-shopping-cart"></i> Orders <i class="fas fa-chevron-right chevron"></i></a>
+        <a class="sidebar-item" href="#"><i class="fas fa-layer-group"></i> Order Processing <i class="fas fa-chevron-right chevron"></i></a>
+        <a class="sidebar-item active" href="#"><i class="fas fa-truck"></i> Distribution <i class="fas fa-chevron-up chevron"></i></a>
+        <div class="sidebar-sub">
+            <a class="sidebar-item active" href="#" style="color:#f08020;">Trip Management</a>
+            <a class="sidebar-item" href="#">Pick Waves</a>
+            <a class="sidebar-item" href="#">Pick Tasks</a>
+        </div>
+        <div class="sidebar-divider"></div>
+        <a class="sidebar-item" href="#"><i class="fas fa-shipping-fast"></i> Shipping <i class="fas fa-chevron-right chevron"></i></a>
+        <a class="sidebar-item" href="#"><i class="fas fa-cog"></i> Setup <i class="fas fa-chevron-right chevron"></i></a>
+    </nav>
+    <div class="main">
+        <!-- Page header -->
+        <div class="page-chrome">
+            <div class="breadcrumb"><a href="#" onclick="switchView(1, document.querySelectorAll('.view-tab')[0]); return false;">Trip Management</a></div>
+            <div class="title-row">
+                <i class="fas fa-chevron-left back-arrow" onclick="switchView(1, document.querySelectorAll('.view-tab')[0])"></i>
+                <span class="page-title">20260917081401</span>
+                <span class="v1-sbadge v1-loading" style="font-size:.72rem;padding:.18rem .65rem;">Loading</span>
+                <div class="actions-bar">
+                    <div class="actions-wrap">
+                        <button class="btn btn-secondary" onclick="toggleDrop('v6-actions-drop', event)">Actions <i class="fas fa-chevron-down" style="font-size:.6rem;"></i></button>
+                        <div class="actions-dropdown" id="v6-actions-drop">
+                            <div class="actions-dropdown-section">Trip</div>
+                            <div class="actions-dropdown-item"><i class="fas fa-edit"></i> Modify Trip</div>
+                            <div class="actions-dropdown-item" onclick="closeDropV6(); addTripStub();"><i class="fas fa-plus"></i> Add Trip</div>
+                            <div class="actions-dropdown-item" style="color:#b0b0c8;cursor:not-allowed;" title="Generate after trip is closed"><i class="fas fa-file-invoice"></i> Print BOL <span style="font-size:.65rem;color:#b0b0c8;margin-left:.3rem;">(trip not closed)</span></div>
+                            <div class="actions-dropdown-item danger"><i class="fas fa-times-circle"></i> Cancel Trip</div>
+                        </div>
+                    </div>
+                    <button class="btn btn-primary"><i class="fas fa-save"></i> Save Trip</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Trip Overview fields -->
+        <div class="section-wrap">
+            <div class="section-title">Trip Overview</div>
+            <div class="fields-grid" style="grid-template-columns: repeat(5, 1fr);">
+                <div class="field-item">
+                    <span class="field-label">Reference Number</span>
+                    <span class="field-value">B2B-10042</span>
+                </div>
+                <div class="field-item">
+                    <span class="field-label">Account Number</span>
+                    <span class="field-value">WMT-SE-DC</span>
+                </div>
+                <div class="field-item">
+                    <span class="field-label">Dock Door</span>
+                    <span class="field-value link">SHIPPING_DOOR4</span>
+                </div>
+                <div class="field-item">
+                    <span class="field-label">Estimated Delivery Date</span>
+                    <span class="field-value">Sep 19, 2026</span>
+                </div>
+                <div class="field-item">
+                    <span class="field-label">Business Unit</span>
+                    <span class="field-value link">DEPOSCO3PL</span>
+                </div>
+                <div class="field-item">
+                    <span class="field-label">Carrier Equipment Number</span>
+                    <span class="field-value" style="color:#b0b0c8;">—</span>
+                </div>
+                <div class="field-item">
+                    <span class="field-label">Driver Name</span>
+                    <span class="field-value" style="color:#b0b0c8;">—</span>
+                </div>
+                <div class="field-item">
+                    <span class="field-label">SCAC</span>
+                    <span class="field-value">XPOL</span>
+                </div>
+                <div class="field-item">
+                    <span class="field-label">Linked Trips</span>
+                    <span class="field-value"><a class="td-link" onclick="switchView(2, document.querySelectorAll('.view-tab')[1])">20260917081601</a></span>
+                </div>
+                <div class="field-item">
+                    <span class="field-label">Transportation Method Code</span>
+                    <span class="field-value">LT</span>
+                </div>
+                <div class="field-item">
+                    <span class="field-label">Shipping Carrier</span>
+                    <span class="field-value">XPO Logistics</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tabs -->
+        <div class="tab-bar">
+            <div class="tab active" onclick="switchInnerTabV6('v6', 'orders', this)">Orders</div>
+            <div class="tab" onclick="switchInnerTabV6('v6', 'shipments', this)">Shipments</div>
+            <div class="tab" onclick="switchInnerTabV6('v6', 'containers', this)">Containers</div>
+            <div class="tab" onclick="switchInnerTabV6('v6', 'shipped', this)">Shipped Containers</div>
+            <div class="tab" onclick="switchInnerTabV6('v6', 'palletopt', this)">Pallet Optimization</div>
+        </div>
+        <div class="tab-content">
+
+            <!-- Orders tab -->
+            <div class="tab-pane active" id="v6-orders">
+                <div class="table-toolbar">
+                    <span class="table-toolbar-title">Orders</span>
+                    <div class="table-toolbar-right">
+                        <button class="btn btn-secondary btn-sm"><i class="fas fa-filter" style="font-size:.65rem;"></i> Filter</button>
+                        <button class="btn btn-secondary btn-sm"><i class="fas fa-sort" style="font-size:.65rem;"></i> Sort</button>
+                        <button class="btn btn-secondary btn-sm"><i class="fas fa-th" style="font-size:.65rem;"></i> Configure</button>
+                    </div>
+                </div>
+                <div class="data-table-wrap">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Type</th>
+                                <th>Number</th>
+                                <th>Created Date</th>
+                                <th>Other Reference Number</th>
+                                <th>Custom Attribute 1</th>
+                                <th>Weight</th>
+                                <th>Order Status</th>
+                                <th>Order Source</th>
+                                <th>Business Unit – Name</th>
+                                <th>Ship From Name</th>
+                                <th>Total Line Count API</th>
+                                <th>Total Qty Ordered</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Sales Order</td>
+                                <td><a class="td-link">10042</a></td>
+                                <td>2026-09-16 14:22</td>
+                                <td>—</td>
+                                <td>B2B</td>
+                                <td>4,200</td>
+                                <td><span class="sbadge sbadge-staged" style="font-size:.67rem;">Pick Complete</span></td>
+                                <td>EDI</td>
+                                <td>DEPOSCO3PL</td>
+                                <td>Gold Parts Co</td>
+                                <td>12</td>
+                                <td>80.0</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Shipments tab -->
+            <div class="tab-pane" id="v6-shipments">
+                <div class="table-toolbar">
+                    <span class="table-toolbar-title">Shipments</span>
+                </div>
+                <div class="data-table-wrap">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Shipment ID</th>
+                                <th>Order</th>
+                                <th>Status</th>
+                                <th>Pallets</th>
+                                <th>Total Weight (lbs)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><a class="td-link">SHP-10042-1</a></td>
+                                <td><a class="td-link">B2B-10042</a></td>
+                                <td><span class="sbadge sbadge-staged" style="font-size:.67rem;">Pick Complete</span></td>
+                                <td>50</td>
+                                <td>4,200</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Containers tab -->
+            <div class="tab-pane" id="v6-containers">
+                <!-- Stat strip -->
+                <div class="stat-strip" style="margin: -.65rem -1.25rem 1rem; border-top: 1px solid #e0e0ea;">
+                    <div class="stat-cell">
+                        <div class="stat-val">38</div>
+                        <div class="stat-lbl">Loaded</div>
+                    </div>
+                    <div class="stat-cell">
+                        <div class="stat-val" style="color:#1e40af;">12</div>
+                        <div class="stat-lbl">Staged</div>
+                    </div>
+                    <div class="stat-cell">
+                        <div class="stat-val" style="color:#5a5a72;">50</div>
+                        <div class="stat-lbl">Total</div>
+                    </div>
+                </div>
+                <div class="table-toolbar">
+                    <span class="table-toolbar-title">Containers</span>
+                    <div class="table-toolbar-right">
+                        <button class="btn btn-secondary btn-sm"><i class="fas fa-filter" style="font-size:.65rem;"></i> Filter</button>
+                    </div>
+                </div>
+                <div class="data-table-wrap">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>LPN</th>
+                                <th>Status</th>
+                                <th>Pallet Build</th>
+                                <th>Order</th>
+                                <th>Weight (lbs)</th>
+                                <th>Cases</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr><td><a class="td-link">LPN-884501</a></td><td><span class="lpn-badge-loaded">Loaded</span></td><td>PB-001</td><td>B2B-10042</td><td>84</td><td>6</td></tr>
+                            <tr><td><a class="td-link">LPN-884502</a></td><td><span class="lpn-badge-loaded">Loaded</span></td><td>PB-001</td><td>B2B-10042</td><td>84</td><td>6</td></tr>
+                            <tr><td><a class="td-link">LPN-884503</a></td><td><span class="lpn-badge-loaded">Loaded</span></td><td>PB-002</td><td>B2B-10042</td><td>91</td><td>7</td></tr>
+                            <tr><td><a class="td-link">LPN-884504</a></td><td><span class="lpn-badge-loaded">Loaded</span></td><td>PB-002</td><td>B2B-10042</td><td>91</td><td>7</td></tr>
+                            <tr><td><a class="td-link">LPN-884505</a></td><td><span class="lpn-badge-loaded">Loaded</span></td><td>PB-003</td><td>B2B-10042</td><td>78</td><td>5</td></tr>
+                            <tr><td><a class="td-link">LPN-884506</a></td><td><span class="lpn-badge-loaded">Loaded</span></td><td>PB-003</td><td>B2B-10042</td><td>78</td><td>5</td></tr>
+                            <tr><td><a class="td-link">LPN-884507</a></td><td><span class="lpn-badge-loaded">Loaded</span></td><td>PB-004</td><td>B2B-10042</td><td>84</td><td>6</td></tr>
+                            <tr><td><a class="td-link">LPN-884508</a></td><td><span class="lpn-badge-loaded">Loaded</span></td><td>PB-004</td><td>B2B-10042</td><td>84</td><td>6</td></tr>
+                            <tr><td><a class="td-link">LPN-884521</a></td><td><span class="lpn-badge-staged">Staged</span></td><td>PB-005</td><td>B2B-10042</td><td>91</td><td>7</td></tr>
+                            <tr><td><a class="td-link">LPN-884522</a></td><td><span class="lpn-badge-staged">Staged</span></td><td>PB-005</td><td>B2B-10042</td><td>91</td><td>7</td></tr>
+                            <tr><td><a class="td-link">LPN-884523</a></td><td><span class="lpn-badge-staged">Staged</span></td><td>PB-006</td><td>B2B-10042</td><td>84</td><td>6</td></tr>
+                            <tr><td><a class="td-link">LPN-884524</a></td><td><span class="lpn-badge-staged">Staged</span></td><td>PB-006</td><td>B2B-10042</td><td>84</td><td>6</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                <p style="font-size:.72rem;color:#9090a8;margin-top:.65rem;text-align:center;">Showing 12 of 50 containers · <a href="#" style="color:#f08020;">Load more</a></p>
+            </div>
+
+            <!-- Shipped Containers tab -->
+            <div class="tab-pane" id="v6-shipped">
+                <div class="empty-state">
+                    <i class="fas fa-truck-loading"></i>
+                    <p>No shipped containers yet.</p>
+                    <p class="empty-hint">Containers appear here once this trip is closed and the BOL is generated.</p>
+                </div>
+            </div>
+
+            <!-- Pallet Optimization tab -->
+            <div class="tab-pane" id="v6-palletopt">
+                <div style="background:white;border:1px solid #e0e0ea;border-radius:4px;">
+                    <div class="opt-results-header">
+                        <h3>
+                            <i class="fas fa-check-circle" style="color:#28a060;"></i>
+                            Pallet Optimization Results
+                            <span class="tab-badge tab-badge-auth"><i class="fas fa-lock" style="font-size:.55rem;margin-right:.2rem;"></i>Authoritative</span>
+                        </h3>
+                        <div style="display:flex;gap:.35rem;">
+                            <button class="btn btn-secondary btn-sm"><i class="fas fa-download"></i> Export CSV</button>
+                        </div>
+                    </div>
+                    <div class="opt-results-body">
+                        <div class="summary-grid">
+                            <div class="summary-card"><div class="s-val">50</div><div class="s-lbl">Total Pallets</div></div>
+                            <div class="summary-card"><div class="s-val">4</div><div class="s-lbl">Pallet Builds</div></div>
+                            <div class="summary-card"><div class="s-val">46</div><div class="s-lbl">Full Pallet Picks</div></div>
+                            <div class="summary-card"><div class="s-val">4,200</div><div class="s-lbl">Gross Wt (lbs)</div></div>
+                            <div class="summary-card"><div class="s-val">80</div><div class="s-lbl">Total Cases</div></div>
+                        </div>
+
+                        <div class="pallets-grid">
+                            <!-- Pallet Build 1 -->
+                            <div class="pallet-card">
+                                <div class="pallet-card-header">
+                                    <span class="pallet-id">PB-001</span>
+                                    <div>
+                                        <span class="pallet-type-badge">Pallet Build</span>
+                                        <span class="config-type-badge config-single">Single-SKU</span>
+                                    </div>
+                                </div>
+                                <div class="pallet-metrics">
+                                    <div class="pallet-metric"><div class="m-val">24</div><div class="m-lbl">Cases</div></div>
+                                    <div class="pallet-metric"><div class="m-val">336</div><div class="m-lbl">Wt (lbs)</div></div>
+                                    <div class="pallet-metric"><div class="m-val">82%</div><div class="m-lbl">Cube Util</div></div>
+                                </div>
+                                <div class="util-bar"><div class="util-fill" style="width:82%;"></div></div>
+                                <div class="layers-label">Layers</div>
+                                <div class="layer-row bottom-layer"><span><span class="layer-num">L1</span><span class="layer-sku">ITEM-WMT-4401</span></span><span class="layer-qty">6 cases</span></div>
+                                <div class="layer-row"><span><span class="layer-num">L2</span><span class="layer-sku">ITEM-WMT-4401</span></span><span class="layer-qty">6 cases</span></div>
+                                <div class="layer-row"><span><span class="layer-num">L3</span><span class="layer-sku">ITEM-WMT-4401</span></span><span class="layer-qty">6 cases</span></div>
+                                <div class="layer-row"><span><span class="layer-num">L4</span><span class="layer-sku">ITEM-WMT-4401</span></span><span class="layer-qty">6 cases</span></div>
+                            </div>
+                            <!-- Pallet Build 2 -->
+                            <div class="pallet-card">
+                                <div class="pallet-card-header">
+                                    <span class="pallet-id">PB-002</span>
+                                    <div>
+                                        <span class="pallet-type-badge">Pallet Build</span>
+                                        <span class="config-type-badge config-mixed">Mixed-SKU</span>
+                                    </div>
+                                </div>
+                                <div class="pallet-metrics">
+                                    <div class="pallet-metric"><div class="m-val">20</div><div class="m-lbl">Cases</div></div>
+                                    <div class="pallet-metric"><div class="m-val">280</div><div class="m-lbl">Wt (lbs)</div></div>
+                                    <div class="pallet-metric"><div class="m-val">76%</div><div class="m-lbl">Cube Util</div></div>
+                                </div>
+                                <div class="util-bar"><div class="util-fill" style="width:76%;"></div></div>
+                                <div class="layers-label">Layers</div>
+                                <div class="layer-row bottom-layer"><span><span class="layer-num">L1</span><span class="layer-sku">ITEM-WMT-4402</span></span><span class="layer-qty">8 cases</span></div>
+                                <div class="layer-row"><span><span class="layer-num">L2</span><span class="layer-sku">ITEM-WMT-4401</span></span><span class="layer-qty">6 cases</span></div>
+                                <div class="layer-row"><span><span class="layer-num">L3</span><span class="layer-sku">ITEM-WMT-4403</span></span><span class="layer-qty">6 cases</span></div>
+                            </div>
+                            <!-- Full Pallet Pick -->
+                            <div class="pallet-card full-pick">
+                                <div class="pallet-card-header">
+                                    <span class="pallet-id" style="color:#28a060;">FP-046</span>
+                                    <div>
+                                        <span class="pallet-type-badge">Full Pallet Pick</span>
+                                    </div>
+                                </div>
+                                <div class="pallet-metrics">
+                                    <div class="pallet-metric"><div class="m-val" style="color:#28a060;">1</div><div class="m-lbl">Pallet</div></div>
+                                    <div class="pallet-metric"><div class="m-val" style="color:#28a060;">8</div><div class="m-lbl">Cases</div></div>
+                                    <div class="pallet-metric"><div class="m-val" style="color:#28a060;">112</div><div class="m-lbl">Wt (lbs)</div></div>
+                                </div>
+                                <div style="font-size:.73rem;color:#287848;margin-top:.3rem;"><i class="fas fa-info-circle" style="font-size:.65rem;margin-right:.2rem;"></i>Pick full existing pallet — no build required.</div>
+                                <div style="font-size:.72rem;color:#5a5a72;margin-top:.3rem;"><span style="color:#9090a8;">Item:</span> ITEM-WMT-4401 &nbsp;|&nbsp; <span style="color:#9090a8;">Location:</span> ZONE-A / BAY-12</div>
+                            </div>
+                        </div>
+
+                        <div class="audit-log">
+                            <h4><i class="fas fa-history" style="margin-right:.3rem;"></i>Audit Trail</h4>
+                            <div class="audit-entry">
+                                <span class="audit-time">08:11</span>
+                                <span>Pallet Optimization run: Estimated results generated. 50 pallets · 4 builds · 46 full picks. Triggered by cjacobson.</span>
+                            </div>
+                            <div class="audit-entry">
+                                <span class="audit-time">08:12</span>
+                                <span>Pallet Optimization committed: 4 builds + 46 full picks = 50 total pallets. Total weight: 4,200 lbs. Total cases: 80. Results locked as Authoritative.</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     VIEW 7 — New Trip Detail (created via Add Trip modal)
+═══════════════════════════════════════════════════ -->
+<div class="view app-layout" id="view-7">
+    <nav class="sidebar">
+        <div class="sidebar-section-label">Application Menu</div>
+        <a class="sidebar-item" href="#"><i class="fas fa-database"></i> Master Data <i class="fas fa-chevron-right chevron"></i></a>
+        <a class="sidebar-item" href="#"><i class="fas fa-shopping-cart"></i> Orders <i class="fas fa-chevron-right chevron"></i></a>
+        <a class="sidebar-item" href="#"><i class="fas fa-layer-group"></i> Order Processing <i class="fas fa-chevron-right chevron"></i></a>
+        <a class="sidebar-item active" href="#"><i class="fas fa-truck"></i> Distribution <i class="fas fa-chevron-up chevron"></i></a>
+        <div class="sidebar-sub">
+            <a class="sidebar-item active" href="#" style="color:#f08020;">Trip Management</a>
+            <a class="sidebar-item" href="#">Pick Waves</a>
+            <a class="sidebar-item" href="#">Pick Tasks</a>
+        </div>
+        <div class="sidebar-divider"></div>
+        <a class="sidebar-item" href="#"><i class="fas fa-shipping-fast"></i> Shipping <i class="fas fa-chevron-right chevron"></i></a>
+        <a class="sidebar-item" href="#"><i class="fas fa-cog"></i> Setup <i class="fas fa-chevron-right chevron"></i></a>
+    </nav>
+    <div class="main">
+        <div class="page-chrome">
+            <div class="breadcrumb"><a href="#" onclick="switchView(1, document.querySelectorAll('.view-tab')[0]); return false;">Trip Management</a></div>
+            <div class="title-row">
+                <i class="fas fa-chevron-left back-arrow" onclick="switchView(6, document.querySelectorAll('.view-tab')[3])"></i>
+                <span class="page-title" id="v7-trip-number">–</span>
+                <span class="v1-sbadge v1-draft" style="font-size:.72rem;padding:.18rem .65rem;">Draft</span>
+                <span id="v7-created-ts" style="font-size:.72rem;color:#a0a0b8;margin-left:.3rem;"></span>
+                <div class="actions-bar">
+                    <button class="btn btn-primary"><i class="fas fa-save"></i> Save Trip</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Info panel -->
+        <div class="info-panel" id="v7-info-panel">
+            <i class="fas fa-info-circle"></i>
+            <div>
+                <strong>This trip is a placeholder for parallel loading.</strong>
+                All pallets for order <a class="td-link">10042</a> are currently assigned to trip <span id="v7-source-trip">20260917081401</span>. Pallets will be assigned to this trip when workers scan them at the loading dock. Carrier booking and dock assignment can be completed now.
+            </div>
+        </div>
+
+        <!-- Trip Overview — editable fields -->
+        <div class="section-wrap">
+            <div class="section-title">Trip Overview</div>
+            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:.75rem 1.25rem;">
+                <div class="ov-field">
+                    <label class="ov-label">Reference Number</label>
+                    <input type="text" id="v7-ref" class="ov-input">
+                </div>
+                <div class="ov-field">
+                    <label class="ov-label">Account Number</label>
+                    <input type="text" id="v7-acct" class="ov-input">
+                </div>
+                <div class="ov-field">
+                    <label class="ov-label">Dock Door</label>
+                    <div class="ov-input-wrap">
+                        <input type="text" id="v7-dock" class="ov-input" style="padding-right:1.8rem;">
+                        <i class="fas fa-search ov-icon"></i>
+                    </div>
+                </div>
+                <div class="ov-field">
+                    <label class="ov-label">Estimated Delivery Date</label>
+                    <div class="ov-input-wrap">
+                        <input type="date" id="v7-date" class="ov-input">
+                    </div>
+                </div>
+                <div class="ov-field">
+                    <label class="ov-label">Business Unit</label>
+                    <input type="text" class="ov-input" value="DEPOSCO3PL" readonly style="background:#fafafa;color:#7a7a92;">
+                </div>
+                <div class="ov-field">
+                    <label class="ov-label">Carrier Equipment Number</label>
+                    <input type="text" class="ov-input">
+                </div>
+                <div class="ov-field">
+                    <label class="ov-label">Driver Name</label>
+                    <input type="text" class="ov-input">
+                </div>
+                <div class="ov-field">
+                    <label class="ov-label">SCAC</label>
+                    <input type="text" class="ov-input">
+                </div>
+                <div class="ov-field">
+                    <label class="ov-label">Transportation Method Code</label>
+                    <select class="ov-input" style="appearance:auto;"><option value="">—</option><option>LT</option><option>TL</option><option>AIR</option></select>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tabs -->
+        <div class="tab-bar">
+            <div class="tab active" onclick="switchInnerTabV7('orders', this)">Orders</div>
+            <div class="tab" onclick="switchInnerTabV7('shipments', this)">Shipments</div>
+            <div class="tab" onclick="switchInnerTabV7('containers', this)">Containers</div>
+            <div class="tab" onclick="switchInnerTabV7('shipped', this)">Shipped Containers</div>
+        </div>
+        <div class="tab-content">
+
+            <!-- Orders tab -->
+            <div class="tab-pane active" id="v7-orders">
+                <div class="table-toolbar">
+                    <span class="table-toolbar-title">Orders</span>
+                    <div class="table-toolbar-right">
+                        <button class="btn btn-secondary btn-sm"><i class="fas fa-filter" style="font-size:.65rem;"></i> Filter</button>
+                        <button class="btn btn-secondary btn-sm"><i class="fas fa-sort" style="font-size:.65rem;"></i> Sort</button>
+                        <button class="btn btn-secondary btn-sm"><i class="fas fa-th" style="font-size:.65rem;"></i> Configure</button>
+                    </div>
+                </div>
+                <div class="data-table-wrap">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Type</th>
+                                <th>Number</th>
+                                <th>Created Date</th>
+                                <th>Other Reference Number</th>
+                                <th>Custom Attribute 1</th>
+                                <th>Weight</th>
+                                <th>Order Status</th>
+                                <th>Order Source</th>
+                                <th>Business Unit – Name</th>
+                                <th>Ship From Name</th>
+                                <th>Total Line Count API</th>
+                                <th>Total Qty Ordered</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><span class="v1-pill">Sales Order</span></td>
+                                <td><a class="td-link">10042</a></td>
+                                <td>2026-09-16 14:22</td>
+                                <td>—</td>
+                                <td>B2B</td>
+                                <td>4,200</td>
+                                <td><span class="sbadge sbadge-staged" style="font-size:.67rem;">Pick Complete</span></td>
+                                <td>EDI</td>
+                                <td>DEPOSCO3PL</td>
+                                <td>Gold Parts Co</td>
+                                <td>12</td>
+                                <td>80.0</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Shipments tab -->
+            <div class="tab-pane" id="v7-shipments">
+                <div class="table-toolbar">
+                    <span class="table-toolbar-title">Shipments</span>
+                </div>
+                <div class="data-table-wrap">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Shipment ID</th>
+                                <th>Order</th>
+                                <th>Status</th>
+                                <th>Pallets</th>
+                                <th>Total Weight (lbs)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><a class="td-link" id="v7-shipment-id">–</a></td>
+                                <td><a class="td-link">B2B-10042</a></td>
+                                <td><span class="v1-sbadge v1-open" style="font-size:.67rem;">Open</span></td>
+                                <td style="color:#b0b0c8;">— (assigned at loading)</td>
+                                <td style="color:#b0b0c8;">—</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Containers tab -->
+            <div class="tab-pane" id="v7-containers">
+                <div class="empty-state">
+                    <i class="fas fa-pallet" style="color:#d0d0e0;"></i>
+                    <p>No pallets assigned yet.</p>
+                    <p class="empty-hint">Pallets will be assigned to this trip when workers scan LPNs at the loading dock.</p>
+                </div>
+            </div>
+
+            <!-- Shipped Containers tab -->
+            <div class="tab-pane" id="v7-shipped">
+                <div class="empty-state"><i class="fas fa-truck-loading"></i><p>No shipped containers.</p></div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<!-- Add Trip Modal -->
+<div class="modal-overlay" id="add-trip-modal" style="display:none;">
+    <div class="modal" style="max-width:480px;">
+        <div class="modal-header">
+            <h2>New Trip</h2>
+            <button class="modal-close" onclick="closeAddTripModal()"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="modal-body" style="display:flex;flex-direction:column;gap:.85rem;">
+            <div class="addtrip-field">
+                <label for="addtrip-ref">Reference Number</label>
+                <input type="text" id="addtrip-ref" class="addtrip-input" value="B2B-10042">
+            </div>
+            <div class="addtrip-field">
+                <label for="addtrip-acct">Account Number</label>
+                <input type="text" id="addtrip-acct" class="addtrip-input" value="WMT-SE-DC">
+            </div>
+            <div class="addtrip-field">
+                <label for="addtrip-dock">Dock Door</label>
+                <div class="addtrip-input-wrap">
+                    <input type="text" id="addtrip-dock" class="addtrip-input" style="padding-right:2rem;">
+                    <i class="fas fa-search addtrip-icon"></i>
+                </div>
+            </div>
+            <div class="addtrip-field">
+                <label for="addtrip-date">Estimated Delivery Date</label>
+                <div class="addtrip-input-wrap">
+                    <input type="date" id="addtrip-date" class="addtrip-input" style="padding-right:2rem;">
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closeAddTripModal()">Cancel</button>
+            <button class="btn btn-primary" onclick="submitAddTrip()">Submit</button>
+        </div>
+    </div>
+</div>
+
+<div class="notif-container" id="notif-container"></div>
+
+<script>
+// ── View 1 lookup tab toggle ──────────────────────────────────────────────
+const lookupPlaceholders = { number: 'Enter trip number', order: 'Enter order number', lpn: 'Enter LPN' };
+function setLookup(type) {
+    document.querySelectorAll('.v1-lookup-tab').forEach(t => t.classList.remove('active'));
+    document.getElementById('lt-' + type).classList.add('active');
+    document.getElementById('lookup-input').placeholder = lookupPlaceholders[type];
+}
+
+// ── View switching ─────────────────────────────────────────────────────────
+function closeTrip1() {
+    // Move loaded containers from Containers tab to Shipped Containers tab
+    const shippedRows = `
+        <div class="table-toolbar"><span class="table-toolbar-title">Shipped Containers</span></div>
+        <div class="data-table-wrap">
+            <table class="data-table">
+                <thead><tr><th>LPN</th><th>Status</th><th>Pallet Build</th><th>Order</th><th>Weight (lbs)</th><th>Cases</th></tr></thead>
+                <tbody>
+                    <tr><td><a class="td-link">LPN-884501</a></td><td><span class="lpn-badge-loaded">Shipped</span></td><td>PB-001</td><td>B2B-10042</td><td>84</td><td>6</td></tr>
+                    <tr><td><a class="td-link">LPN-884502</a></td><td><span class="lpn-badge-loaded">Shipped</span></td><td>PB-001</td><td>B2B-10042</td><td>84</td><td>6</td></tr>
+                    <tr><td><a class="td-link">LPN-884503</a></td><td><span class="lpn-badge-loaded">Shipped</span></td><td>PB-002</td><td>B2B-10042</td><td>91</td><td>7</td></tr>
+                    <tr><td><a class="td-link">LPN-884504</a></td><td><span class="lpn-badge-loaded">Shipped</span></td><td>PB-002</td><td>B2B-10042</td><td>91</td><td>7</td></tr>
+                    <tr><td><a class="td-link">LPN-884505</a></td><td><span class="lpn-badge-loaded">Shipped</span></td><td>PB-003</td><td>B2B-10042</td><td>78</td><td>5</td></tr>
+                    <tr><td><a class="td-link">LPN-884506</a></td><td><span class="lpn-badge-loaded">Shipped</span></td><td>PB-003</td><td>B2B-10042</td><td>78</td><td>5</td></tr>
+                    <tr><td><a class="td-link">LPN-884507</a></td><td><span class="lpn-badge-loaded">Shipped</span></td><td>PB-004</td><td>B2B-10042</td><td>84</td><td>6</td></tr>
+                    <tr><td><a class="td-link">LPN-884508</a></td><td><span class="lpn-badge-loaded">Shipped</span></td><td>PB-004</td><td>B2B-10042</td><td>84</td><td>6</td></tr>
+                </tbody>
+            </table>
+        </div>
+        <p style="font-size:.72rem;color:#9090a8;margin-top:.65rem;text-align:center;">Showing 8 of 38 containers · <a href="#" style="color:#f08020;">Load more</a></p>`;
+
+    document.getElementById('v6-shipped').innerHTML = shippedRows;
+    document.getElementById('v6-containers').innerHTML = `
+        <div class="empty-state">
+            <i class="fas fa-pallet" style="color:#d0d0e0;"></i>
+            <p>No containers.</p>
+            <p class="empty-hint">All containers from this trip have been shipped.</p>
+        </div>`;
+
+    switchView(1, document.querySelectorAll('.view-tab')[0]);
+    notify('Trip 20260917081401 closed. 12 containers auto-assigned to 20260917081601. BOL generated.', 'success');
+}
+
+function confirmTruckFull() {
+    // Trip list — Trip 1 → Closed, Trip 2 → Staged; clear Pending Split badge from number cell
+    document.getElementById('v1-trip1-status').innerHTML = '<span class="v1-sbadge v1-closed">Closed</span>';
+    document.getElementById('v1-trip2-status').innerHTML = '<span class="v1-sbadge v1-staged">Staged</span>';
+    document.getElementById('v1-trip2-number').innerHTML = '<a class="td-link">20260917081601</a>';
+
+    // View 2 header badges — replace Open+Pending Split with Loading
+    const statusBadge = document.getElementById('v2-badge-status');
+    statusBadge.className = 'sbadge sbadge-staged';
+    statusBadge.style.cssText = 'font-size:.72rem;padding:.2rem .65rem;';
+    statusBadge.innerHTML = '<i class="fas fa-circle" style="font-size:.45rem;"></i> Staged';
+    // View 2 info panel — hide it (pendingSplit flag cleared)
+    document.getElementById('v2-info-panel').style.display = 'none';
+
+    // View 2 Containers tab — populate with the 12 transferred containers
+    document.getElementById('v2-containers').innerHTML = `
+        <div class="table-toolbar"><span class="table-toolbar-title">Containers</span></div>
+        <div class="data-table-wrap">
+            <table class="data-table">
+                <thead><tr><th>Container</th><th>Order</th><th>Weight (lbs)</th><th>Status</th></tr></thead>
+                <tbody>
+                    <tr><td style="color:#f08020;font-weight:700;">LPN-884521</td><td>10042</td><td>80</td><td><span class="sbadge sbadge-staged" style="font-size:.67rem;">Staged</span></td></tr>
+                    <tr><td style="color:#f08020;font-weight:700;">LPN-884522</td><td>10042</td><td>80</td><td><span class="sbadge sbadge-staged" style="font-size:.67rem;">Staged</span></td></tr>
+                    <tr><td style="color:#f08020;font-weight:700;">LPN-884523</td><td>10042</td><td>40</td><td><span class="sbadge sbadge-staged" style="font-size:.67rem;">Staged</span></td></tr>
+                    <tr><td style="color:#f08020;font-weight:700;">LPN-884524</td><td>10042</td><td>25</td><td><span class="sbadge sbadge-staged" style="font-size:.67rem;">Staged</span></td></tr>
+                    <tr><td style="color:#f08020;font-weight:700;">LPN-884525</td><td>10042</td><td>25</td><td><span class="sbadge sbadge-staged" style="font-size:.67rem;">Staged</span></td></tr>
+                    <tr><td style="color:#f08020;font-weight:700;">LPN-884526</td><td>10042</td><td>80</td><td><span class="sbadge sbadge-staged" style="font-size:.67rem;">Staged</span></td></tr>
+                    <tr><td style="color:#f08020;font-weight:700;">LPN-884527</td><td>10042</td><td>80</td><td><span class="sbadge sbadge-staged" style="font-size:.67rem;">Staged</span></td></tr>
+                    <tr><td style="color:#f08020;font-weight:700;">LPN-884528</td><td>10042</td><td>40</td><td><span class="sbadge sbadge-staged" style="font-size:.67rem;">Staged</span></td></tr>
+                    <tr><td style="color:#f08020;font-weight:700;">LPN-884529</td><td>10042</td><td>80</td><td><span class="sbadge sbadge-staged" style="font-size:.67rem;">Staged</span></td></tr>
+                    <tr><td style="color:#f08020;font-weight:700;">LPN-884530</td><td>10042</td><td>80</td><td><span class="sbadge sbadge-staged" style="font-size:.67rem;">Staged</span></td></tr>
+                    <tr><td style="color:#f08020;font-weight:700;">LPN-884531</td><td>10042</td><td>25</td><td><span class="sbadge sbadge-staged" style="font-size:.67rem;">Staged</span></td></tr>
+                    <tr><td style="color:#f08020;font-weight:700;">LPN-884532</td><td>10042</td><td>25</td><td><span class="sbadge sbadge-staged" style="font-size:.67rem;">Staged</span></td></tr>
+                </tbody>
+            </table>
+        </div>`;
+
+    // View 6 (Trip 1) containers — remove transferred containers, update stat strip
+    document.getElementById('v6-containers').innerHTML = `
+        <div class="stat-strip" style="margin: -.65rem -1.25rem 1rem; border-top: 1px solid #e0e0ea;">
+            <div class="stat-cell"><div class="stat-val">38</div><div class="stat-lbl">Loaded</div></div>
+            <div class="stat-cell"><div class="stat-val" style="color:#5a5a72;">38</div><div class="stat-lbl">Total</div></div>
+        </div>
+        <div class="table-toolbar">
+            <span class="table-toolbar-title">Containers</span>
+            <div class="table-toolbar-right">
+                <button class="btn btn-secondary btn-sm"><i class="fas fa-filter" style="font-size:.65rem;"></i> Filter</button>
+            </div>
+        </div>
+        <div class="data-table-wrap">
+            <table class="data-table">
+                <thead><tr><th>LPN</th><th>Status</th><th>Pallet Build</th><th>Order</th><th>Weight (lbs)</th><th>Cases</th></tr></thead>
+                <tbody>
+                    <tr><td><a class="td-link">LPN-884501</a></td><td><span class="lpn-badge-loaded">Loaded</span></td><td>PB-001</td><td>B2B-10042</td><td>84</td><td>6</td></tr>
+                    <tr><td><a class="td-link">LPN-884502</a></td><td><span class="lpn-badge-loaded">Loaded</span></td><td>PB-001</td><td>B2B-10042</td><td>84</td><td>6</td></tr>
+                    <tr><td><a class="td-link">LPN-884503</a></td><td><span class="lpn-badge-loaded">Loaded</span></td><td>PB-002</td><td>B2B-10042</td><td>91</td><td>7</td></tr>
+                    <tr><td><a class="td-link">LPN-884504</a></td><td><span class="lpn-badge-loaded">Loaded</span></td><td>PB-002</td><td>B2B-10042</td><td>91</td><td>7</td></tr>
+                    <tr><td><a class="td-link">LPN-884505</a></td><td><span class="lpn-badge-loaded">Loaded</span></td><td>PB-003</td><td>B2B-10042</td><td>78</td><td>5</td></tr>
+                    <tr><td><a class="td-link">LPN-884506</a></td><td><span class="lpn-badge-loaded">Loaded</span></td><td>PB-003</td><td>B2B-10042</td><td>78</td><td>5</td></tr>
+                    <tr><td><a class="td-link">LPN-884507</a></td><td><span class="lpn-badge-loaded">Loaded</span></td><td>PB-004</td><td>B2B-10042</td><td>84</td><td>6</td></tr>
+                    <tr><td><a class="td-link">LPN-884508</a></td><td><span class="lpn-badge-loaded">Loaded</span></td><td>PB-004</td><td>B2B-10042</td><td>84</td><td>6</td></tr>
+                </tbody>
+            </table>
+        </div>
+        <p style="font-size:.72rem;color:#9090a8;margin-top:.65rem;text-align:center;">Showing 8 of 38 containers · <a href="#" style="color:#f08020;">Load more</a></p>`;
+
+    switchHH(3);
+}
+
+function toggleLinkedTrips(id, event) {
+    event.stopPropagation();
+    const pop = document.getElementById(id);
+    const isOpen = pop.classList.contains('open');
+    document.querySelectorAll('.linked-popover').forEach(p => p.classList.remove('open'));
+    if (!isOpen) pop.classList.add('open');
+}
+document.addEventListener('click', () => {
+    document.querySelectorAll('.linked-popover').forEach(p => p.classList.remove('open'));
+});
+
+function switchHH(n) {
+    document.querySelectorAll('.hh-screen').forEach(s => s.classList.remove('active'));
+    document.getElementById('hh-' + n).classList.add('active');
+}
+
+function submitHHScan() {
+    const input = document.getElementById('hh-scan-input');
+    const error = document.getElementById('hh-scan-error');
+    const val = input.value.trim();
+    if (val === '20260917081401') {
+        error.style.display = 'none';
+        switchHH(2);
+    } else {
+        error.style.display = 'block';
+        input.focus();
+        input.select();
+    }
+}
+
+function switchView(n, tabEl) {
+    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+    document.querySelectorAll('.view-tab').forEach(t => t.classList.remove('active'));
+    document.getElementById('view-' + n).classList.add('active');
+    if (tabEl) tabEl.classList.add('active');
+
+    // show/hide trip full modal for view 4
+    const modal = document.getElementById('truck-full-modal');
+    if (n === 4) {
+        modal.style.display = 'flex';
+        modal.classList.add('open');
+    } else {
+        modal.style.display = 'none';
+        modal.classList.remove('open');
+    }
+    // reset handheld to screen 1 when entering the loading dock view
+    if (n === 3) {
+        switchHH(1);
+        const inp = document.getElementById('hh-scan-input');
+        const err = document.getElementById('hh-scan-error');
+        if (inp) inp.value = '';
+        if (err) err.style.display = 'none';
+    }
+
+    // ensure tab panes reset correctly on re-entry for views with inner tabs
+    [5, 6, 7].forEach(viewNum => {
+        if (n === viewNum) {
+            const vEl = document.getElementById('view-' + viewNum);
+            if (vEl) {
+                vEl.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                vEl.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+                const firstTab = vEl.querySelector('.tab');
+                const firstPane = vEl.querySelector('.tab-pane');
+                if (firstTab) firstTab.classList.add('active');
+                if (firstPane) firstPane.classList.add('active');
+            }
+        }
+    });
+}
+
+// ── Inner tab switching ────────────────────────────────────────────────────
+function switchInnerTab(prefix, name, el) {
+    const view = document.getElementById('view-' + (prefix === 'v2' ? '2' : '3'));
+    view.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    view.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+    el.classList.add('active');
+    const pane = document.getElementById(prefix + '-' + name);
+    if (pane) pane.classList.add('active');
+}
+
+function switchInnerTabV5(prefix, name, el) {
+    const view = document.getElementById('view-5');
+    view.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    view.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+    el.classList.add('active');
+    const pane = document.getElementById(prefix + '-' + name);
+    if (pane) pane.classList.add('active');
+}
+
+function switchInnerTabV6(prefix, name, el) {
+    const view = document.getElementById('view-6');
+    view.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    view.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+    el.classList.add('active');
+    const pane = document.getElementById(prefix + '-' + name);
+    if (pane) pane.classList.add('active');
+}
+
+function switchInnerTabV7(name, el) {
+    const view = document.getElementById('view-7');
+    view.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    view.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+    el.classList.add('active');
+    const pane = document.getElementById('v7-' + name);
+    if (pane) pane.classList.add('active');
+}
+
+function closeDropV6() {
+    document.getElementById('v6-actions-drop').classList.remove('open');
+}
+
+function addTripStub() {
+    const modal = document.getElementById('add-trip-modal');
+    modal.style.display = 'flex';
+    modal.classList.add('open');
+    setTimeout(() => document.getElementById('addtrip-ref').focus(), 50);
+}
+
+function closeAddTripModal() {
+    const modal = document.getElementById('add-trip-modal');
+    modal.style.display = 'none';
+    modal.classList.remove('open');
+}
+
+function submitAddTrip() {
+    const ref  = document.getElementById('addtrip-ref').value;
+    const acct = document.getElementById('addtrip-acct').value;
+    const dock = document.getElementById('addtrip-dock').value;
+    const date = document.getElementById('addtrip-date').value;
+
+    // Generate timestamp-style trip number
+    const now = new Date();
+    const pad = n => String(n).padStart(2, '0');
+    const tripNum = `${now.getFullYear()}${pad(now.getMonth()+1)}${pad(now.getDate())}${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
+    const ts = `Created ${now.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})} ${pad(now.getHours())}:${pad(now.getMinutes())}`;
+
+    // Populate view-7
+    document.getElementById('v7-trip-number').textContent = tripNum;
+    document.getElementById('v7-created-ts').textContent = ts;
+    document.getElementById('v7-ref').value  = ref;
+    document.getElementById('v7-acct').value = acct;
+    document.getElementById('v7-dock').value = dock;
+    document.getElementById('v7-date').value = date;
+    document.getElementById('v7-shipment-id').textContent = 'SHP-10042-3';
+
+    closeAddTripModal();
+    switchView(7, null);
+    notify(`Trip ${tripNum} created successfully.`, 'success');
+}
+
+// ── Dropdown ───────────────────────────────────────────────────────────────
+function toggleDrop(id, e) {
+    e.stopPropagation();
+    document.querySelectorAll('.actions-dropdown').forEach(d => {
+        if (d.id !== id) d.classList.remove('open');
+    });
+    document.getElementById(id).classList.toggle('open');
+}
+document.addEventListener('click', () => {
+    document.querySelectorAll('.actions-dropdown').forEach(d => d.classList.remove('open'));
+});
+
+// ── Loading dock trip card selection ──────────────────────────────────────
+let selectedTrip = 1;
+function selectTripCard(n) {
+    selectedTrip = n;
+    document.getElementById('dock-card-1').classList.toggle('selected', n === 1);
+    document.getElementById('dock-card-2').classList.toggle('selected', n === 2);
+    const btn = document.getElementById('begin-scan-btn');
+    btn.innerHTML = `<i class="fas fa-barcode"></i> Begin Scanning — Trip ${n}`;
+    btn.disabled = false;
+}
+
+// ── Trip Full modal ───────────────────────────────────────────────────────
+function closeTruckFullModal() {
+    switchView(3, document.querySelectorAll('.view-tab')[2]);
+}
+
+// ── Notification ───────────────────────────────────────────────────────────
+function notify(msg, type) {
+    const n = document.createElement('div');
+    n.className = `notif notif-${type}`;
+    n.innerHTML = `<i class="fas fa-check-circle"></i><span style="flex:1;">${msg}</span><button onclick="this.parentElement.remove()" style="background:none;border:none;cursor:pointer;color:#b0b0c8;font-size:.82rem;"><i class="fas fa-times"></i></button>`;
+    document.getElementById('notif-container').appendChild(n);
+    setTimeout(() => { if (n.parentElement) n.remove(); }, 6000);
+}
+
+// ── Init view 4 modal ──────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+    const modal = document.getElementById('truck-full-modal');
+    modal.style.display = 'none';
+});
+</script>
+</body>
+</html>
