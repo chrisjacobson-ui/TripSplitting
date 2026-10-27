@@ -819,7 +819,7 @@
                     <div class="hh-footer">
                         <button class="hh-btn hh-btn-back" onclick="switchHH(1)">Back</button>
                         <button class="hh-btn hh-btn-exit" id="hh2-trip-full-btn" onclick="switchHH(5)">Trip Full</button>
-                        <button class="hh-btn hh-btn-submit" id="hh2-summary-btn" onclick="switchHH(3)">Summary</button>
+                        <button class="hh-btn hh-btn-submit" id="hh2-summary-btn" onclick="switchHH(3)" style="display:none;">Summary</button>
                     </div>
                 </div>
 
@@ -830,7 +830,7 @@
                         <div class="hh-row"><span class="hh-lbl">Trip:</span><span class="hh-val">20260917081401</span></div>
                         <div class="hh-row"><span class="hh-lbl">Shipping Door:</span><span class="hh-val">SHIPPING_DOOR4</span></div>
                         <div class="hh-row"><span class="hh-lbl">Orders on Trip:</span><span style="font-size:.8rem;color:#1e1e2a;font-weight:500;">1</span></div>
-                        <div class="hh-row"><span class="hh-lbl">Loaded Containers:</span><span style="font-size:.8rem;color:#1e1e2a;font-weight:500;">50</span></div>
+                        <div class="hh-row"><span class="hh-lbl">Loaded Containers:</span><span style="font-size:.8rem;color:#1e1e2a;font-weight:500;">38</span></div>
                         <div class="hh-row"><span class="hh-lbl">Expected Weight:</span><span style="font-size:.8rem;color:#1e1e2a;font-weight:500;">4,200.00 LB</span></div>
                         <div class="hh-row"><span class="hh-lbl">Loaded Weight:</span><span style="font-size:.8rem;color:#1e1e2a;font-weight:500;">4,200.00 LB</span></div>
                     </div>
@@ -1820,6 +1820,7 @@ function confirmTruckFull() {
     // Screen 2 — hide transferred containers and Trip Full button; relabel advance button
     document.getElementById('hh2-pending').style.display = 'none';
     document.getElementById('hh2-trip-full-btn').style.display = 'none';
+    document.getElementById('hh2-summary-btn').style.display = '';
     document.getElementById('hh2-summary-btn').textContent = 'Next';
 
     // View 2 Containers tab — populate with the 12 transferred containers
