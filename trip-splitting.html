@@ -1799,8 +1799,48 @@ function closeTrip1() {
     v6Status.className = 'v1-sbadge v1-closed';
     v6Status.textContent = 'Closed';
 
-    switchView(1, document.querySelectorAll('.view-tab')[0]);
-    notify('Trip 20260917081401 closed. 12 containers auto-assigned to 20260917081601. BOL generated.', 'success');
+    // Reset hh-2 footer buttons for Trip 2 (undo state set by confirmTruckFull)
+    const tfBtn = document.getElementById('hh2-trip-full-btn');
+    const sumBtn = document.getElementById('hh2-summary-btn');
+    tfBtn.style.display = '';
+    tfBtn.textContent = 'Trip Full';
+    sumBtn.style.display = 'none';
+    sumBtn.textContent = 'Summary';
+
+    // Populate hh-2 for Trip 2 — show transferred containers in "Containers to Load"
+    document.querySelector('#hh-2 .hh-body').innerHTML = `
+        <div class="hh-row"><span class="hh-lbl">Trip:</span><span class="hh-val">20260917081601</span></div>
+        <div class="hh-section-title">Loaded Containers (0)</div>
+        <p style="font-size:.75rem;color:#7a7a92;margin:.2rem 0 .65rem;">No containers loaded yet.</p>
+        <div id="hh2-pending">
+        <div class="hh-section-title">Containers to Load (12)</div>
+        <table class="hh-table">
+            <thead><tr><th>Number</th><th>Weight</th><th>Order</th></tr></thead>
+            <tbody>
+                <tr><td class="hh-lpn">LPN-884521</td><td>80</td><td>10042</td></tr>
+                <tr><td class="hh-lpn">LPN-884522</td><td>80</td><td>10042</td></tr>
+                <tr><td class="hh-lpn">LPN-884523</td><td>40</td><td>10042</td></tr>
+                <tr><td class="hh-lpn">LPN-884524</td><td>25</td><td>10042</td></tr>
+                <tr><td class="hh-lpn">LPN-884525</td><td>25</td><td>10042</td></tr>
+                <tr><td class="hh-lpn">LPN-884526</td><td>80</td><td>10042</td></tr>
+                <tr><td class="hh-lpn">LPN-884527</td><td>80</td><td>10042</td></tr>
+                <tr><td class="hh-lpn">LPN-884528</td><td>40</td><td>10042</td></tr>
+                <tr><td class="hh-lpn">LPN-884529</td><td>80</td><td>10042</td></tr>
+                <tr><td class="hh-lpn">LPN-884530</td><td>80</td><td>10042</td></tr>
+                <tr><td class="hh-lpn">LPN-884531</td><td>25</td><td>10042</td></tr>
+                <tr><td class="hh-lpn">LPN-884532</td><td>25</td><td>10042</td></tr>
+            </tbody>
+        </table>
+        </div>
+        <div class="hh-container-row">
+            <span class="hh-container-lbl">Container:</span>
+            <input class="hh-input-sm" type="text" style="flex:1;">
+        </div>`;
+
+    // Navigate to Trip Loading tab, screen 2 (skip screen 1 entry scan)
+    switchView(3, document.querySelectorAll('.view-tab')[4]);
+    switchHH(2);
+    notify('Trip 20260917081401 closed. Loading trip 20260917081601 — 12 containers ready to load.', 'success');
 }
 
 function confirmTruckFull() {
