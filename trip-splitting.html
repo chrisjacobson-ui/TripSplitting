@@ -615,7 +615,7 @@
                 </div>
                 <div class="field-item">
                     <span class="field-label">Linked Trips</span>
-                    <span class="field-value"><a class="td-link" onclick="switchView(6, document.querySelectorAll('.view-tab')[3])">20260917081401</a></span>
+                    <span class="field-value"><div class="linked-popover-wrap"><span class="linked-chip" onclick="toggleLinkedTrips('lp-detail-v2', event)"><i class="fas fa-link" style="font-size:.52rem;"></i> 1 trip</span><div class="linked-popover" id="lp-detail-v2"><div class="linked-popover-label">Linked Trips</div><div class="linked-popover-item" onclick="switchView(6, document.querySelectorAll('.view-tab')[3]); event.stopPropagation();"><i class="fas fa-truck" style="font-size:.62rem;color:#b0b0c8;"></i> 20260917081401</div></div></div></span>
                 </div>
             </div>
         </div>
@@ -1078,7 +1078,7 @@
                 </div>
                 <div class="field-item">
                     <span class="field-label">Linked Trips</span>
-                    <span class="field-value"><a class="td-link" onclick="switchView(6, document.querySelectorAll('.view-tab')[3])">20260917081401</a></span>
+                    <span class="field-value"><div class="linked-popover-wrap"><span class="linked-chip" onclick="toggleLinkedTrips('lp-detail-v5', event)"><i class="fas fa-link" style="font-size:.52rem;"></i> 1 trip</span><div class="linked-popover" id="lp-detail-v5"><div class="linked-popover-label">Linked Trips</div><div class="linked-popover-item" onclick="switchView(6, document.querySelectorAll('.view-tab')[3]); event.stopPropagation();"><i class="fas fa-truck" style="font-size:.62rem;color:#b0b0c8;"></i> 20260917081401</div></div></div></span>
                 </div>
             </div>
         </div>
@@ -1159,13 +1159,6 @@
             </div>
             <!-- Containers tab — split order empty, standard order pending pick -->
             <div class="tab-pane" id="v5-containers">
-                <div class="banner banner-warn" style="margin-bottom:.85rem;">
-                    <i class="fas fa-info-circle"></i>
-                    <div>
-                        <strong>Order 10042 containers are not shown here.</strong>
-                        These containers are currently assigned to Trip 20260917081401. They will appear on this trip once scanned during Trip Loading.
-                    </div>
-                </div>
                 <div class="empty-state" style="padding:2rem;">
                     <i class="fas fa-pallet" style="color:#d0d0e0;"></i>
                     <p>No pallets loaded yet.</p>
@@ -1281,7 +1274,7 @@
                 </div>
                 <div class="field-item">
                     <span class="field-label">Linked Trips</span>
-                    <span class="field-value"><a class="td-link" onclick="switchView(2, document.querySelectorAll('.view-tab')[1])">20260917081601</a></span>
+                    <span class="field-value"><div class="linked-popover-wrap"><span class="linked-chip" onclick="toggleLinkedTrips('lp-detail-v6', event)"><i class="fas fa-link" style="font-size:.52rem;"></i> 1 trip</span><div class="linked-popover" id="lp-detail-v6"><div class="linked-popover-label">Linked Trips</div><div class="linked-popover-item" onclick="switchView(2, document.querySelectorAll('.view-tab')[1]); event.stopPropagation();"><i class="fas fa-truck" style="font-size:.62rem;color:#b0b0c8;"></i> 20260917081601</div></div></div></span>
                 </div>
                 <div class="field-item">
                     <span class="field-label">Transportation Method Code</span>
@@ -1383,21 +1376,6 @@
 
             <!-- Containers tab -->
             <div class="tab-pane" id="v6-containers">
-                <!-- Stat strip -->
-                <div class="stat-strip" style="margin: -.65rem -1.25rem 1rem; border-top: 1px solid #e0e0ea;">
-                    <div class="stat-cell">
-                        <div class="stat-val">38</div>
-                        <div class="stat-lbl">Loaded</div>
-                    </div>
-                    <div class="stat-cell">
-                        <div class="stat-val" style="color:#1e40af;">12</div>
-                        <div class="stat-lbl">Staged</div>
-                    </div>
-                    <div class="stat-cell">
-                        <div class="stat-val" style="color:#5a5a72;">50</div>
-                        <div class="stat-lbl">Total</div>
-                    </div>
-                </div>
                 <div class="table-toolbar">
                     <span class="table-toolbar-title">Containers</span>
                     <div class="table-toolbar-right">
@@ -1410,25 +1388,24 @@
                             <tr>
                                 <th>LPN</th>
                                 <th>Status</th>
-                                <th>Pallet Build</th>
                                 <th>Order</th>
                                 <th>Weight (lbs)</th>
                                 <th>Cases</th>
                             </tr>
                         </thead>
                         <tbody>
-                            <tr><td><a class="td-link">LPN-884501</a></td><td><span class="lpn-badge-loaded">Loaded</span></td><td>PB-001</td><td>B2B-10042</td><td>84</td><td>6</td></tr>
-                            <tr><td><a class="td-link">LPN-884502</a></td><td><span class="lpn-badge-loaded">Loaded</span></td><td>PB-001</td><td>B2B-10042</td><td>84</td><td>6</td></tr>
-                            <tr><td><a class="td-link">LPN-884503</a></td><td><span class="lpn-badge-loaded">Loaded</span></td><td>PB-002</td><td>B2B-10042</td><td>91</td><td>7</td></tr>
-                            <tr><td><a class="td-link">LPN-884504</a></td><td><span class="lpn-badge-loaded">Loaded</span></td><td>PB-002</td><td>B2B-10042</td><td>91</td><td>7</td></tr>
-                            <tr><td><a class="td-link">LPN-884505</a></td><td><span class="lpn-badge-loaded">Loaded</span></td><td>PB-003</td><td>B2B-10042</td><td>78</td><td>5</td></tr>
-                            <tr><td><a class="td-link">LPN-884506</a></td><td><span class="lpn-badge-loaded">Loaded</span></td><td>PB-003</td><td>B2B-10042</td><td>78</td><td>5</td></tr>
-                            <tr><td><a class="td-link">LPN-884507</a></td><td><span class="lpn-badge-loaded">Loaded</span></td><td>PB-004</td><td>B2B-10042</td><td>84</td><td>6</td></tr>
-                            <tr><td><a class="td-link">LPN-884508</a></td><td><span class="lpn-badge-loaded">Loaded</span></td><td>PB-004</td><td>B2B-10042</td><td>84</td><td>6</td></tr>
-                            <tr><td><a class="td-link">LPN-884521</a></td><td><span class="lpn-badge-staged">Staged</span></td><td>PB-005</td><td>B2B-10042</td><td>91</td><td>7</td></tr>
-                            <tr><td><a class="td-link">LPN-884522</a></td><td><span class="lpn-badge-staged">Staged</span></td><td>PB-005</td><td>B2B-10042</td><td>91</td><td>7</td></tr>
-                            <tr><td><a class="td-link">LPN-884523</a></td><td><span class="lpn-badge-staged">Staged</span></td><td>PB-006</td><td>B2B-10042</td><td>84</td><td>6</td></tr>
-                            <tr><td><a class="td-link">LPN-884524</a></td><td><span class="lpn-badge-staged">Staged</span></td><td>PB-006</td><td>B2B-10042</td><td>84</td><td>6</td></tr>
+                            <tr><td><a class="td-link">LPN-884501</a></td><td><span class="lpn-badge-loaded">Loaded</span></td><td>B2B-10042</td><td>84</td><td>6</td></tr>
+                            <tr><td><a class="td-link">LPN-884502</a></td><td><span class="lpn-badge-loaded">Loaded</span></td><td>B2B-10042</td><td>84</td><td>6</td></tr>
+                            <tr><td><a class="td-link">LPN-884503</a></td><td><span class="lpn-badge-loaded">Loaded</span></td><td>B2B-10042</td><td>91</td><td>7</td></tr>
+                            <tr><td><a class="td-link">LPN-884504</a></td><td><span class="lpn-badge-loaded">Loaded</span></td><td>B2B-10042</td><td>91</td><td>7</td></tr>
+                            <tr><td><a class="td-link">LPN-884505</a></td><td><span class="lpn-badge-loaded">Loaded</span></td><td>B2B-10042</td><td>78</td><td>5</td></tr>
+                            <tr><td><a class="td-link">LPN-884506</a></td><td><span class="lpn-badge-loaded">Loaded</span></td><td>B2B-10042</td><td>78</td><td>5</td></tr>
+                            <tr><td><a class="td-link">LPN-884507</a></td><td><span class="lpn-badge-loaded">Loaded</span></td><td>B2B-10042</td><td>84</td><td>6</td></tr>
+                            <tr><td><a class="td-link">LPN-884508</a></td><td><span class="lpn-badge-loaded">Loaded</span></td><td>B2B-10042</td><td>84</td><td>6</td></tr>
+                            <tr><td><a class="td-link">LPN-884521</a></td><td><span class="lpn-badge-staged">Staged</span></td><td>B2B-10042</td><td>91</td><td>7</td></tr>
+                            <tr><td><a class="td-link">LPN-884522</a></td><td><span class="lpn-badge-staged">Staged</span></td><td>B2B-10042</td><td>91</td><td>7</td></tr>
+                            <tr><td><a class="td-link">LPN-884523</a></td><td><span class="lpn-badge-staged">Staged</span></td><td>B2B-10042</td><td>84</td><td>6</td></tr>
+                            <tr><td><a class="td-link">LPN-884524</a></td><td><span class="lpn-badge-staged">Staged</span></td><td>B2B-10042</td><td>84</td><td>6</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -1583,7 +1560,7 @@
             <i class="fas fa-info-circle"></i>
             <div>
                 <strong>This trip is a placeholder for parallel loading.</strong>
-                All pallets for order <a class="td-link">10042</a> are currently assigned to trip <span id="v7-source-trip">20260917081401</span>. Pallets will be assigned to this trip when workers scan them at the loading dock. Carrier booking and dock assignment can be completed now.
+                All containers for order <a class="td-link">10042</a> are currently assigned to trip <span id="v7-source-trip">20260917081401</span>. Containers will be assigned to this trip when scanned during Trip Loading.
             </div>
         </div>
 
@@ -1884,14 +1861,14 @@ function confirmTruckFull() {
             <table class="data-table">
                 <thead><tr><th>LPN</th><th>Status</th><th>Pallet Build</th><th>Order</th><th>Weight (lbs)</th><th>Cases</th></tr></thead>
                 <tbody>
-                    <tr><td><a class="td-link">LPN-884501</a></td><td><span class="lpn-badge-loaded">Loaded</span></td><td>PB-001</td><td>B2B-10042</td><td>84</td><td>6</td></tr>
-                    <tr><td><a class="td-link">LPN-884502</a></td><td><span class="lpn-badge-loaded">Loaded</span></td><td>PB-001</td><td>B2B-10042</td><td>84</td><td>6</td></tr>
-                    <tr><td><a class="td-link">LPN-884503</a></td><td><span class="lpn-badge-loaded">Loaded</span></td><td>PB-002</td><td>B2B-10042</td><td>91</td><td>7</td></tr>
-                    <tr><td><a class="td-link">LPN-884504</a></td><td><span class="lpn-badge-loaded">Loaded</span></td><td>PB-002</td><td>B2B-10042</td><td>91</td><td>7</td></tr>
-                    <tr><td><a class="td-link">LPN-884505</a></td><td><span class="lpn-badge-loaded">Loaded</span></td><td>PB-003</td><td>B2B-10042</td><td>78</td><td>5</td></tr>
-                    <tr><td><a class="td-link">LPN-884506</a></td><td><span class="lpn-badge-loaded">Loaded</span></td><td>PB-003</td><td>B2B-10042</td><td>78</td><td>5</td></tr>
-                    <tr><td><a class="td-link">LPN-884507</a></td><td><span class="lpn-badge-loaded">Loaded</span></td><td>PB-004</td><td>B2B-10042</td><td>84</td><td>6</td></tr>
-                    <tr><td><a class="td-link">LPN-884508</a></td><td><span class="lpn-badge-loaded">Loaded</span></td><td>PB-004</td><td>B2B-10042</td><td>84</td><td>6</td></tr>
+                    <tr><td><a class="td-link">LPN-884501</a></td><td><span class="lpn-badge-loaded">Loaded</span></td><td>B2B-10042</td><td>84</td><td>6</td></tr>
+                    <tr><td><a class="td-link">LPN-884502</a></td><td><span class="lpn-badge-loaded">Loaded</span></td><td>B2B-10042</td><td>84</td><td>6</td></tr>
+                    <tr><td><a class="td-link">LPN-884503</a></td><td><span class="lpn-badge-loaded">Loaded</span></td><td>B2B-10042</td><td>91</td><td>7</td></tr>
+                    <tr><td><a class="td-link">LPN-884504</a></td><td><span class="lpn-badge-loaded">Loaded</span></td><td>B2B-10042</td><td>91</td><td>7</td></tr>
+                    <tr><td><a class="td-link">LPN-884505</a></td><td><span class="lpn-badge-loaded">Loaded</span></td><td>B2B-10042</td><td>78</td><td>5</td></tr>
+                    <tr><td><a class="td-link">LPN-884506</a></td><td><span class="lpn-badge-loaded">Loaded</span></td><td>B2B-10042</td><td>78</td><td>5</td></tr>
+                    <tr><td><a class="td-link">LPN-884507</a></td><td><span class="lpn-badge-loaded">Loaded</span></td><td>B2B-10042</td><td>84</td><td>6</td></tr>
+                    <tr><td><a class="td-link">LPN-884508</a></td><td><span class="lpn-badge-loaded">Loaded</span></td><td>B2B-10042</td><td>84</td><td>6</td></tr>
                 </tbody>
             </table>
         </div>
